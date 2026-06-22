@@ -379,7 +379,7 @@ export const faqs = [
   {
     question: "How fast can you fix my website?",
     answer:
-      "Most bug and layout fixes ship in 48–72 hours. AI website audits are delivered in 3–5 business days. Full redesigns typically take 2–6 weeks depending on scope, and you'll get a fixed timeline before any work starts.",
+      "Most bug and layout fixes ship in 48–72 hours. AI website audits are delivered in 3–5 business days. Full redesigns typically take 2–4 weeks depending on scope, and you'll get a fixed timeline before any work starts.",
   },
   {
     question: "Do you work with WordPress, Shopify, Wix or custom code?",
