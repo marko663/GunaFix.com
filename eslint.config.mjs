@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone automation package — not part of the Next.js app.
+    "automation/**",
   ]),
 ]);
 
