@@ -1,0 +1,19 @@
+{
+  "name": "gunafix-growth-agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "24/7 growth automation agents for GunaFix (lead finding, outreach drafting, social content, ads/traffic reporting, leader digest). Runs on Node's built-in fetch/http, no external deps.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lead-finder": "node src/agents/leadFinder.mjs",
+    "outreach": "node src/agents/outreach.mjs",
+    "social-content": "node src/agents/socialContent.mjs",
+    "ads-traffic": "node src/agents/adsTraffic.mjs",
+    "leader": "node src/agents/leader.mjs",
+    "gmail-token": "node src/scripts/getGmailRefreshToken.mjs"
+  },
+  "dependencies": {}
+}
