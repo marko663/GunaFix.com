@@ -17,6 +17,7 @@ import {
   addIssueComment,
   setIssueLabels,
   listIssuesByLabel,
+  listIssueComments,
   ensureLabelsExist,
 } from "../lib/github.mjs";
 
@@ -63,6 +64,8 @@ async function handleUrgentItems() {
     "",
     ...lines,
     "",
+    "If an item is asking you something, reply directly on that issue with yes/approve or no/deny (or use the local dashboard's buttons) — the agents check for your reply on every run. Other items are just FYI; a comment on any of them gets acknowledged too.",
+    "",
     "— Leader agent",
   ].join("\n");
 
@@ -83,7 +86,34 @@ async function handleUrgentItems() {
   return unnotified;
 }
 
-async function postRunSummary({ counts, urgentHandled }) {
+/**
+ * General catch-all for items that are `urgent` but not a structured
+ * permission request (those resolve themselves via resolvePermissions() in
+ * the owning agent). Anything else — e.g. a traffic-cliff anomaly with no
+ * proposed action — just gets acknowledged so the owner knows a reply landed,
+ * since there's no defined action to execute on free-form text yet.
+ */
+async function acknowledgeOwnerReplies() {
+  const urgentIssues = await listIssuesByLabel("urgent").catch(() => []);
+  const acknowledged = [];
+
+  for (const issue of urgentIssues) {
+    const labels = issue.labels.map((l) => l.name);
+    if (labels.includes("awaiting-permission") || labels.includes("leader-acknowledged")) continue;
+
+    const comments = await listIssueComments(issue.number).catch(() => []);
+    const ownerComment = comments.find((c) => c.user?.type !== "Bot");
+    if (!ownerComment) continue;
+
+    await addIssueComment(issue.number, "Got it — noted. (Free-form replies aren't auto-actioned yet, but the team has seen this.)");
+    await setIssueLabels(issue.number, [...labels, "leader-acknowledged"]);
+    acknowledged.push(issue);
+  }
+
+  return acknowledged;
+}
+
+async function postRunSummary({ counts, urgentHandled, acknowledged }) {
   const body = [
     `Run at ${new Date().toISOString()}`,
     "",
@@ -92,6 +122,7 @@ async function postRunSummary({ counts, urgentHandled }) {
     `- Outreach drafts created (lifetime, open): ${counts.drafted}`,
     `- Open social content pieces ready to film: ${counts.socialNew}`,
     `- Urgent items alerted this run: ${urgentHandled.length}`,
+    `- Owner replies acknowledged this run: ${acknowledged.length}`,
   ].join("\n");
 
   let issue = await findIssueByTitle(RUN_LOG_TITLE, "leader-report");
@@ -106,11 +137,12 @@ async function postRunSummary({ counts, urgentHandled }) {
 async function run() {
   if (!requireFields(config, ["githubToken", "githubRepo"], "leader (github)")) return;
 
-  await ensureLabelsExist(["leader-notified", "leader-report", "urgent"]);
+  await ensureLabelsExist(["leader-notified", "leader-report", "urgent", "leader-acknowledged"]);
 
   const counts = await gatherCounts();
   const urgentHandled = await handleUrgentItems();
-  await postRunSummary({ counts, urgentHandled });
+  const acknowledged = await acknowledgeOwnerReplies();
+  await postRunSummary({ counts, urgentHandled, acknowledged });
 }
 
 run().catch((err) => {

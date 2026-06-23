@@ -10,6 +10,8 @@
 import { config, requireFields } from "../config.mjs";
 import { askClaude } from "../lib/anthropic.mjs";
 import { createIssue, addIssueComment, findIssueByTitle, ensureLabelsExist } from "../lib/github.mjs";
+import { requestPermission, resolvePermissions } from "../lib/permissions.mjs";
+import { postFacebookText } from "../lib/meta.mjs";
 
 const TOPICS = [
   "the 5 second rule: why a slow website loses customers before they even read your offer",
@@ -82,6 +84,31 @@ async function generateContentIssue() {
 
   await createIssue({ title, body, labels: ["social-content", "status:new"] });
   console.log(`[socialContent] filed content issue: ${title}`);
+
+  if (config.metaPageAccessToken && config.metaPageId && parsed.captionFb) {
+    await requestPermission({
+      type: "social-post",
+      title: `[Permission] Auto-post to Facebook — ${date}`,
+      question:
+        "Want me to post this caption to the Facebook Page right now? (Instagram/TikTok still need the actual video uploaded by hand — there's no video file for a script-only agent to post automatically.)",
+      context: `Caption:\n${parsed.captionFb}`,
+      payload: { contentTitle: title, message: parsed.captionFb },
+    });
+  }
+}
+
+/** Posts captions the owner approved for auto-posting via a permission request. */
+async function postApprovedContent() {
+  const resolved = await resolvePermissions("social-post");
+  for (const { decision, payload } of resolved) {
+    if (decision !== "granted" || !payload) continue;
+    try {
+      await postFacebookText({ message: payload.message });
+      console.log(`[socialContent] auto-posted to Facebook per owner approval: "${payload.contentTitle}"`);
+    } catch (err) {
+      console.error(`[socialContent] failed to auto-post approved content: ${err.message}`);
+    }
+  }
 }
 
 async function updateContactsOverview() {
@@ -126,6 +153,7 @@ async function run() {
   if (!requireFields(config, ["githubToken", "githubRepo"], "socialContent (github)")) return;
 
   await ensureLabelsExist(["social-content", "status:new"]);
+  await postApprovedContent();
   await generateContentIssue();
   await updateContactsOverview();
 }
