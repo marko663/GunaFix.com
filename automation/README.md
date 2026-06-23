@@ -19,10 +19,22 @@ running yourself.
 | Agent | File | Does | Can contact you directly? |
 |---|---|---|---|
 | Lead Finder | `src/agents/leadFinder.mjs` | Searches local businesses (Google Places), audits their site, opens a GitHub Issue per qualifying lead | No |
-| Outreach | `src/agents/outreach.mjs` | Drafts a personalized cold email per lead with Claude, saves it as a **Gmail draft only** | No — drafts only, you send |
-| Social Content | `src/agents/socialContent.mjs` | Writes a short video script + IG/TikTok/Facebook captions, files it as an Issue to film | No |
-| Ads & Traffic | `src/agents/adsTraffic.mjs` | Posts a GA4 + Google Ads digest, flags the issue `urgent` on anomalies | No |
-| **Leader** | `src/agents/leader.mjs` | Rolls up the run, emails you immediately on anything `urgent`, posts a run log | **Yes — the only one** |
+| Outreach | `src/agents/outreach.mjs` | Drafts a personalized cold email per lead with Claude, saves it as a **Gmail draft**, and asks permission to send it for you | No — emails only go out as a draft, or after you say yes (see below) |
+| Social Content | `src/agents/socialContent.mjs` | Writes a short video script + IG/TikTok/Facebook captions, files it as an Issue to film, and asks permission to auto-post the FB caption | No — posts only after you say yes |
+| Ads & Traffic | `src/agents/adsTraffic.mjs` | Posts a GA4 + Google Ads digest, flags the issue `urgent` on anomalies, and asks permission to cut a campaign's budget on a zero-conversion spend anomaly | No — only ever cuts spend, and only after you say yes |
+| **Leader** | `src/agents/leader.mjs` | Rolls up the run, emails you immediately on anything `urgent` (including permission requests from the agents above), posts a run log, acknowledges any other reply you leave on an urgent issue | **Yes — the only one** |
+
+## Two-way permission requests
+
+Some agents need a one-time "yes" before they touch something irreversible (sending an email, spending ad budget, posting publicly). Instead of a separate channel, this rides the same GitHub Issues board:
+
+1. An agent calls `requestPermission()` (`src/lib/permissions.mjs`), which files a GitHub issue labeled `awaiting-permission` + `urgent` with a plain-language question. The `urgent` label means the Leader's existing immediate-email alert fires on it — no separate notification path.
+2. You reply on that issue with a comment containing **yes**/**approve** or **no**/**deny** — or click **Approve**/**Deny** in the local dashboard's "Needs your decision" section, which just posts the same kind of comment.
+3. The next time the owning agent runs (every 6h via cron, or `workflow_dispatch` from the Actions tab for an immediate check), `resolvePermissions()` picks up your reply, closes the issue, and hands the agent back what it needs to act.
+
+Today this covers: auto-sending a specific outreach draft, auto-posting a specific Facebook caption, and cutting a specific campaign's budget in half on a zero-conversion anomaly. Nothing escalates spend or posts automatically without you saying yes first.
+
+Anything else labeled `urgent` that isn't a structured permission request (e.g. a traffic-cliff anomaly with no proposed fix) — replying on that issue just gets you an acknowledgment from the Leader; there's no free-form instruction parser yet.
 
 Leads live as GitHub Issues (labels: `lead`, `status:new` →
 `status:drafted` / `status:needs-contact-info` / `status:contacted`) — a

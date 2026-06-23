@@ -71,6 +71,14 @@ export async function listIssuesByLabel(label, state = "open") {
   return ghFetch(`/issues?${params.toString()}`);
 }
 
+export async function getIssue(issueNumber) {
+  return ghFetch(`/issues/${issueNumber}`);
+}
+
+export async function listIssueComments(issueNumber) {
+  return ghFetch(`/issues/${issueNumber}/comments?per_page=100`);
+}
+
 /** All open issues across every label (used by the local dashboard). Excludes PRs, which the REST API otherwise mixes into /issues. */
 export async function listAllOpenIssues() {
   assertReady();
@@ -97,6 +105,9 @@ export async function ensureLabelsExist(labels) {
     urgent: "b60205",
     "social-content": "0052cc",
     "ads-traffic": "0052cc",
+    "awaiting-permission": "fbca04",
+    "decision:granted": "0e8a16",
+    "decision:denied": "b60205",
   };
   for (const name of labels) {
     try {

@@ -6,8 +6,9 @@
 
 import { config, requireFields } from "../config.mjs";
 import { askClaude } from "../lib/anthropic.mjs";
-import { createDraft } from "../lib/gmail.mjs";
-import { listIssuesByLabel, addIssueComment, setIssueLabels } from "../lib/github.mjs";
+import { createDraft, sendEmail } from "../lib/gmail.mjs";
+import { listIssuesByLabel, addIssueComment, setIssueLabels, getIssue } from "../lib/github.mjs";
+import { requestPermission, resolvePermissions } from "../lib/permissions.mjs";
 
 function extractEmailFromBody(body) {
   const match = body.match(/\*\*Emails found on site:\*\*\s*(.+)/);
@@ -46,6 +47,31 @@ function parseDraft(text) {
   return { subject: subjectMatch[1].trim(), body: bodyMatch[1].trim() };
 }
 
+/** Sends drafts the owner approved for auto-send via a permission request, and moves that lead to status:contacted. */
+async function sendApprovedDrafts() {
+  const resolved = await resolvePermissions("outreach-send");
+  for (const { decision, payload } of resolved) {
+    if (!payload) continue;
+    if (decision === "denied") {
+      await addIssueComment(
+        payload.leadIssue,
+        "You declined auto-send — the draft is still sitting in Gmail drafts for you to review and send by hand."
+      ).catch(() => {});
+      continue;
+    }
+    try {
+      await sendEmail({ to: payload.to, subject: payload.subject, body: payload.body });
+      const lead = await getIssue(payload.leadIssue);
+      const labels = lead.labels.map((l) => l.name).map((l) => (l.startsWith("status:") ? "status:contacted" : l));
+      await setIssueLabels(payload.leadIssue, labels);
+      await addIssueComment(payload.leadIssue, `**Sent automatically** per your approval — to ${payload.to}.`);
+      console.log(`[outreach] auto-sent approved draft for lead #${payload.leadIssue}`);
+    } catch (err) {
+      console.error(`[outreach] failed to send approved draft for #${payload.leadIssue}: ${err.message}`);
+    }
+  }
+}
+
 async function run() {
   if (!requireFields(config, ["anthropicApiKey"], "outreach (anthropic)")) return;
   if (!requireFields(config, ["githubToken", "githubRepo"], "outreach (github)")) return;
@@ -57,6 +83,8 @@ async function run() {
     )
   )
     return;
+
+  await sendApprovedDrafts();
 
   const issues = await listIssuesByLabel("status:new");
   const leadIssues = issues.filter((i) => i.labels.some((l) => l.name === "lead"));
@@ -95,6 +123,13 @@ async function run() {
         issue.number,
         issue.labels.map((l) => l.name).map((l) => (l === "status:new" ? "status:drafted" : l))
       );
+      await requestPermission({
+        type: "outreach-send",
+        title: `[Permission] Auto-send outreach to ${name}?`,
+        question: `I drafted a cold email to **${name}** (${email}) and saved it as a Gmail draft. Want me to send it automatically instead of waiting for you to review and hit send yourself?`,
+        context: `Lead: #${issue.number} — ${issue.html_url}\n\n**Subject:** ${parsed.subject}\n\n${parsed.body}`,
+        payload: { leadIssue: issue.number, to: email, subject: parsed.subject, body: parsed.body },
+      });
       drafted++;
       console.log(`[outreach] drafted email for #${issue.number} (${name})`);
     } catch (err) {

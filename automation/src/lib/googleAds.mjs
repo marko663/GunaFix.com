@@ -18,12 +18,11 @@ async function accessToken() {
   });
 }
 
-async function gaqlSearch(query) {
+async function adsHeaders() {
   if (!config.googleAdsDeveloperToken || !config.googleAdsCustomerId) {
     throw new Error("GOOGLE_ADS_DEVELOPER_TOKEN and GOOGLE_ADS_CUSTOMER_ID must be set");
   }
   const token = await accessToken();
-  const url = `https://googleads.googleapis.com/${config.googleAdsApiVersion}/customers/${config.googleAdsCustomerId}/googleAds:search`;
   const headers = {
     Authorization: `Bearer ${token}`,
     "developer-token": config.googleAdsDeveloperToken,
@@ -32,6 +31,12 @@ async function gaqlSearch(query) {
   if (config.googleAdsLoginCustomerId) {
     headers["login-customer-id"] = config.googleAdsLoginCustomerId;
   }
+  return headers;
+}
+
+async function gaqlSearch(query) {
+  const headers = await adsHeaders();
+  const url = `https://googleads.googleapis.com/${config.googleAdsApiVersion}/customers/${config.googleAdsCustomerId}/googleAds:search`;
   const res = await fetch(url, { method: "POST", headers, body: JSON.stringify({ query }) });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -41,10 +46,11 @@ async function gaqlSearch(query) {
   return data.results || [];
 }
 
-/** Spend/clicks/impressions/conversions across all campaigns for the last N days. */
+/** Spend/clicks/impressions/conversions across all campaigns for the last N days, plus each campaign's current daily budget. */
 export async function getAdsSummary(days = 7) {
   const query = `
-    SELECT campaign.name, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
+    SELECT campaign.name, campaign.campaign_budget, campaign_budget.amount_micros,
+      metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
     FROM campaign
     WHERE segments.date DURING LAST_${days}_DAYS
   `.replace(/LAST_\d+_DAYS/, days <= 7 ? "LAST_7_DAYS" : "LAST_30_DAYS");
@@ -65,6 +71,8 @@ export async function getAdsSummary(days = 7) {
     conversions += Number(m.conversions || 0);
     byCampaign.push({
       name: r.campaign?.name,
+      budgetResourceName: r.campaign?.campaignBudget,
+      budgetAmountMicros: Number(r.campaignBudget?.amountMicros || 0),
       impressions: Number(m.impressions || 0),
       clicks: Number(m.clicks || 0),
       costUsd: Number(m.costMicros || 0) / 1_000_000,
@@ -81,4 +89,24 @@ export async function getAdsSummary(days = 7) {
     ctr: impressions ? (clicks / impressions) * 100 : 0,
     byCampaign,
   };
+}
+
+/** Lowers a campaign's daily budget. Only ever called after the owner approves a specific cut via a permission request — never raises spend automatically. */
+export async function cutCampaignBudget({ budgetResourceName, newAmountMicros }) {
+  const headers = await adsHeaders();
+  const url = `https://googleads.googleapis.com/${config.googleAdsApiVersion}/customers/${config.googleAdsCustomerId}/campaignBudgets:mutate`;
+  const body = {
+    operations: [
+      {
+        updateMask: "amount_micros",
+        update: { resourceName: budgetResourceName, amountMicros: String(Math.round(newAmountMicros)) },
+      },
+    ],
+  };
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Google Ads API error ${res.status}: ${text}`);
+  }
+  return res.json();
 }

@@ -6,7 +6,7 @@
 
 import http from "node:http";
 import { config, requireFields } from "../config.mjs";
-import { listAllOpenIssues, setIssueLabels, closeIssue } from "../lib/github.mjs";
+import { listAllOpenIssues, setIssueLabels, closeIssue, addIssueComment } from "../lib/github.mjs";
 
 const PORT = Number(process.env.DASHBOARD_PORT || 4040);
 
@@ -23,10 +23,11 @@ function labelNames(issue) {
 }
 
 function categorize(issues) {
-  const groups = { urgent: [], leads: [], social: [], ads: [], leaderReports: [], other: [] };
+  const groups = { permissions: [], urgent: [], leads: [], social: [], ads: [], leaderReports: [], other: [] };
   for (const issue of issues) {
     const labels = labelNames(issue);
-    if (labels.includes("urgent")) groups.urgent.push(issue);
+    if (labels.includes("awaiting-permission")) groups.permissions.push(issue);
+    else if (labels.includes("urgent")) groups.urgent.push(issue);
     else if (labels.includes("lead")) groups.leads.push(issue);
     else if (labels.includes("social-content")) groups.social.push(issue);
     else if (labels.includes("ads-traffic")) groups.ads.push(issue);
@@ -52,6 +53,10 @@ function renderIssue(issue) {
   const chips = labels.map((l) => `<span class="chip">${escapeHtml(l)}</span>`).join(" ");
 
   const actions = [];
+  if (labels.includes("awaiting-permission")) {
+    actions.push(actionForm(issue, { action: "permission-decision", decision: "granted" }, "Approve"));
+    actions.push(actionForm(issue, { action: "permission-decision", decision: "denied" }, "Deny"));
+  }
   if (labels.includes("lead") && !labels.includes("status:contacted")) {
     actions.push(
       actionForm(
@@ -61,7 +66,7 @@ function renderIssue(issue) {
       )
     );
   }
-  if (!labels.includes("leader-report") && !labels.includes("ads-traffic")) {
+  if (!labels.includes("leader-report") && !labels.includes("ads-traffic") && !labels.includes("awaiting-permission")) {
     actions.push(actionForm(issue, { action: "close" }, "Close"));
   }
 
@@ -115,6 +120,8 @@ async function renderPage() {
   <h1>${escapeHtml(config.businessName)} Growth Agents</h1>
   <p class="sub">Local mirror of the GitHub Issues board — actions here write straight back to GitHub, nothing is stored locally.
     <a href="https://github.com/${config.githubRepo}/issues" target="_blank" rel="noopener">Open on GitHub →</a></p>
+  ${groups.permissions.length ? `<p class="sub">Approve/Deny posts your reply — the agents apply it on their next run (every 6h, or trigger <code>workflow_dispatch</code> on the Growth Agents workflow for an immediate check).</p>` : ""}
+  ${renderSection("Needs your decision", groups.permissions)}
   ${renderSection("Urgent", groups.urgent)}
   ${renderSection("Leads", groups.leads)}
   ${renderSection("Social content", groups.social)}
@@ -149,6 +156,9 @@ async function handleAction(req, res) {
       const currentLabels = (params.get("currentLabels") || "").split(",").filter(Boolean);
       const nextLabels = [...currentLabels.filter((l) => !l.startsWith("status:")), label];
       await setIssueLabels(number, nextLabels);
+    } else if (action === "permission-decision") {
+      const decision = params.get("decision");
+      await addIssueComment(number, decision === "granted" ? "approve" : "deny");
     }
   } catch (err) {
     console.error(`[dashboard] action failed: ${err.message}`);
