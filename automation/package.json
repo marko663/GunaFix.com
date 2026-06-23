@@ -13,7 +13,8 @@
     "social-content": "node src/agents/socialContent.mjs",
     "ads-traffic": "node src/agents/adsTraffic.mjs",
     "leader": "node src/agents/leader.mjs",
-    "gmail-token": "node src/scripts/getGmailRefreshToken.mjs"
+    "gmail-token": "node src/scripts/getGmailRefreshToken.mjs",
+    "dashboard": "node src/dashboard/server.mjs"
   },
   "dependencies": {}
 }

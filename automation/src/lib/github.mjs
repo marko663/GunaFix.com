@@ -71,6 +71,21 @@ export async function listIssuesByLabel(label, state = "open") {
   return ghFetch(`/issues?${params.toString()}`);
 }
 
+/** All open issues across every label (used by the local dashboard). Excludes PRs, which the REST API otherwise mixes into /issues. */
+export async function listAllOpenIssues() {
+  assertReady();
+  const params = new URLSearchParams({ state: "open", per_page: "100" });
+  const issues = await ghFetch(`/issues?${params.toString()}`);
+  return issues.filter((issue) => !issue.pull_request);
+}
+
+export async function closeIssue(issueNumber) {
+  return ghFetch(`/issues/${issueNumber}`, {
+    method: "PATCH",
+    body: JSON.stringify({ state: "closed" }),
+  });
+}
+
 export async function ensureLabelsExist(labels) {
   const palette = {
     lead: "0e8a16",

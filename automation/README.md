@@ -129,6 +129,34 @@ node src/agents/adsTraffic.mjs
 node src/agents/leader.mjs
 ```
 
+## Local dashboard
+
+The Issues tab works, but it's not the friendliest thing to check from a
+phone. `src/dashboard/server.mjs` is a small local web server (Node's
+built-in `http`, no framework) that renders the same leads/drafts/social
+content/run-log board as a single page, with one-click buttons for the
+common actions ("Mark contacted", "Close"). **There is no local database —
+every page load reads live from GitHub and every button writes straight
+back to it**, so the dashboard can never drift out of sync with the Issues
+tab; it's just a faster window onto the same data.
+
+1. Create a GitHub personal access token with `repo` scope (classic), or a
+   fine-grained token with **Issues: Read and write** on this repo, at
+   https://github.com/settings/tokens — locally there's no auto-provided
+   `GITHUB_TOKEN` like in Actions, so this is required.
+2. Set `GH_TOKEN=<that token>` and `GITHUB_REPOSITORY=owner/repo` in
+   `.env.local` (or export them directly).
+3. Run it:
+   ```bash
+   cd automation
+   export $(grep -v '^#' .env.local | xargs)
+   npm run dashboard
+   ```
+4. Open `http://localhost:4040` (override with `DASHBOARD_PORT`).
+
+Outreach emails still have to be sent by hand from Gmail — the dashboard
+only mirrors GitHub, it doesn't touch the draft-only outreach flow.
+
 ## Running on GitHub Actions
 
 Already wired up in `.github/workflows/growth-agents.yml`: runs every 6
