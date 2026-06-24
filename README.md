@@ -29,6 +29,22 @@ call" request form. Copy `.env.example` to `.env.local` and set
 submissions by email. Without it, submissions are logged to the server
 console so the forms still work end-to-end in development.
 
+## Growth agents dashboard
+
+`/dashboard` is a live, password-gated page on this site for running the
+24/7 growth agents in `automation/` (lead finder, outreach, social content,
+search & traffic, leader) — see `automation/README.md` for what they do.
+There's no database: every page load reads straight from the GitHub Issues
+board the agents use as their CRM, and every button (Approve/Deny, Mark
+contacted, Close) writes straight back to it.
+
+Set these to enable it:
+- `DASHBOARD_PASSWORD` — the shared password that gates the page.
+- `GH_TOKEN` — a GitHub token with Issues read/write on this repo.
+- `GITHUB_REPOSITORY` — defaults to `marko663/gunafix.com`.
+
+Without `DASHBOARD_PASSWORD` set, the page just shows it's not configured.
+
 ## Before going live
 
 - Have a lawyer review `src/app/privacy/page.tsx` and `src/app/terms/page.tsx`,

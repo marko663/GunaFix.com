@@ -23,14 +23,14 @@ function labelNames(issue) {
 }
 
 function categorize(issues) {
-  const groups = { permissions: [], urgent: [], leads: [], social: [], ads: [], leaderReports: [], other: [] };
+  const groups = { permissions: [], urgent: [], leads: [], social: [], search: [], leaderReports: [], other: [] };
   for (const issue of issues) {
     const labels = labelNames(issue);
     if (labels.includes("awaiting-permission")) groups.permissions.push(issue);
     else if (labels.includes("urgent")) groups.urgent.push(issue);
     else if (labels.includes("lead")) groups.leads.push(issue);
     else if (labels.includes("social-content")) groups.social.push(issue);
-    else if (labels.includes("ads-traffic")) groups.ads.push(issue);
+    else if (labels.includes("search-traffic")) groups.search.push(issue);
     else if (labels.includes("leader-report")) groups.leaderReports.push(issue);
     else groups.other.push(issue);
   }
@@ -66,7 +66,7 @@ function renderIssue(issue) {
       )
     );
   }
-  if (!labels.includes("leader-report") && !labels.includes("ads-traffic") && !labels.includes("awaiting-permission")) {
+  if (!labels.includes("leader-report") && !labels.includes("search-traffic") && !labels.includes("awaiting-permission")) {
     actions.push(actionForm(issue, { action: "close" }, "Close"));
   }
 
@@ -125,7 +125,7 @@ async function renderPage() {
   ${renderSection("Urgent", groups.urgent)}
   ${renderSection("Leads", groups.leads)}
   ${renderSection("Social content", groups.social)}
-  ${renderSection("Ads & traffic digests", groups.ads)}
+  ${renderSection("Search & traffic digests", groups.search)}
   ${renderSection("Leader run log", groups.leaderReports)}
   ${groups.other.length ? renderSection("Other", groups.other) : ""}
   <p class="refresh"><a href="/">Refresh</a></p>

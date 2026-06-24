@@ -1,6 +1,6 @@
-// Google OAuth2 helpers: refresh-token grant (Gmail, Google Ads — user-
-// consented apps) and service-account JWT grant (GA4 Data API). Built on
-// Node's built-in crypto + fetch, no googleapis dependency.
+// Google OAuth2 helpers: refresh-token grant (Gmail — user-consented apps)
+// and service-account JWT grant (GA4 Data API, Search Console API). Built
+// on Node's built-in crypto + fetch, no googleapis dependency.
 
 import { createSign } from "node:crypto";
 

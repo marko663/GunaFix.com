@@ -38,15 +38,10 @@ export const config = {
   ga4ClientEmail: env("GA4_CLIENT_EMAIL"), // service account
   ga4PrivateKey: env("GA4_PRIVATE_KEY"),
 
-  // Google Ads API — ads performance reporting
-  googleAdsDeveloperToken: env("GOOGLE_ADS_DEVELOPER_TOKEN"),
-  googleAdsCustomerId: env("GOOGLE_ADS_CUSTOMER_ID"),
-  googleAdsLoginCustomerId: env("GOOGLE_ADS_LOGIN_CUSTOMER_ID"),
-  googleAdsClientId: env("GOOGLE_ADS_CLIENT_ID"),
-  googleAdsClientSecret: env("GOOGLE_ADS_CLIENT_SECRET"),
-  googleAdsRefreshToken: env("GOOGLE_ADS_REFRESH_TOKEN"),
-  // Bump if Google deprecates this version: https://developers.google.com/google-ads/api/docs/release-notes
-  googleAdsApiVersion: env("GOOGLE_ADS_API_VERSION", "v17"),
+  // Google Search Console API — organic search performance reporting.
+  // Reuses the GA4 service account (ga4ClientEmail/ga4PrivateKey) below —
+  // just add that same service account as a user in Search Console too.
+  searchConsoleSiteUrl: env("SEARCH_CONSOLE_SITE_URL"), // e.g. "https://gunafix.com/" or "sc-domain:gunafix.com"
 
   // Meta Graph API — optional FB/IG auto-posting
   metaPageAccessToken: env("META_PAGE_ACCESS_TOKEN"),
