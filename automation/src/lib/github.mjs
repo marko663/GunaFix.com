@@ -104,7 +104,7 @@ export async function ensureLabelsExist(labels) {
     "leader-report": "5319e7",
     urgent: "b60205",
     "social-content": "0052cc",
-    "ads-traffic": "0052cc",
+    "search-traffic": "0052cc",
     "awaiting-permission": "fbca04",
     "decision:granted": "0e8a16",
     "decision:denied": "b60205",

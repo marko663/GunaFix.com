@@ -1,5 +1,5 @@
 // Leader agent — the ONLY agent allowed to contact the owner directly.
-// Runs last (after lead-finder, outreach, social-content, ads-traffic),
+// Runs last (after lead-finder, outreach, social-content, search-traffic),
 // rolls up what happened in this run, and:
 //   - emails the owner immediately if anything is labeled `urgent` (and not
 //     already notified) — this is the "fast feedback" channel since there's
