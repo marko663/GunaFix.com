@@ -3,8 +3,15 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-import { addIssueComment, closeIssue, setIssueLabels } from "@/lib/github";
+import {
+  addIssueComment,
+  closeIssue,
+  GROWTH_AGENTS_WORKFLOW,
+  setIssueLabels,
+  triggerWorkflowDispatch,
+} from "@/lib/github";
 import { clearAuthCookie, isAuthed, setAuthCookie, verifyPassword } from "@/lib/dashboardAuth";
+import { runSetupAssistantTurn, type ChatMessage } from "@/lib/setupAssistant";
 
 export async function login(formData: FormData) {
   const password = String(formData.get("password") || "");
@@ -44,4 +51,25 @@ export async function closeIssueAction(formData: FormData) {
   const number = Number(formData.get("number"));
   await closeIssue(number);
   revalidatePath("/dashboard");
+}
+
+export async function runAgentsNowAction() {
+  if (!(await isAuthed())) return;
+  await triggerWorkflowDispatch(GROWTH_AGENTS_WORKFLOW);
+  revalidatePath("/dashboard");
+}
+
+/** Called directly from the chat client component, not as a <form action>. Re-checks auth itself since it can write secrets. */
+export async function chatWithSetupAssistant(
+  history: ChatMessage[],
+  userText: string,
+): Promise<ChatMessage[]> {
+  if (!(await isAuthed())) {
+    return [
+      ...history,
+      { role: "user", content: userText },
+      { role: "assistant", content: "Not authenticated." },
+    ];
+  }
+  return runSetupAssistantTurn(history, userText);
 }

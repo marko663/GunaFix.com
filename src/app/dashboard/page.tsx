@@ -4,17 +4,44 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  CREDENTIAL_CATALOG,
+  CREDENTIAL_GROUPS,
+  type CredentialGroup,
+} from "@/lib/credentialCatalog";
 import { isDashboardConfigured, isAuthed } from "@/lib/dashboardAuth";
-import { isGithubConfigured, listAllOpenIssues, type GithubIssue } from "@/lib/github";
+import {
+  GROWTH_AGENTS_WORKFLOW,
+  getLatestWorkflowRunWithJobs,
+  isGithubConfigured,
+  listActionsSecretNames,
+  listActionsVariables,
+  listAllOpenIssues,
+  type GithubIssue,
+  type GithubWorkflowJob,
+  type GithubWorkflowRun,
+} from "@/lib/github";
 import {
   closeIssueAction,
   decideAction,
   login,
   logout,
   markContactedAction,
+  runAgentsNowAction,
 } from "./actions";
+import { SetupAssistantChat } from "./SetupAssistantChat";
 
 export const dynamic = "force-dynamic";
+
+const AGENT_JOB_LABELS: Record<string, string> = {
+  "lead-finder": "Lead Finder",
+  outreach: "Outreach",
+  "social-content": "Social Content",
+  "search-traffic": "Search & Traffic",
+  leader: "Leader",
+};
+
+const AGENT_JOB_ORDER = ["lead-finder", "outreach", "social-content", "search-traffic", "leader"];
 
 function labelNames(issue: GithubIssue) {
   return issue.labels.map((l) => l.name);
@@ -145,6 +172,131 @@ function Shell({ children }: { children: ReactNode }) {
   );
 }
 
+function AgentStatusSection({
+  data,
+  error,
+}: {
+  data: { run: GithubWorkflowRun; jobs: GithubWorkflowJob[] } | null;
+  error: string | null;
+}) {
+  const jobsByName = new Map(data?.jobs.map((j) => [j.name, j]) ?? []);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-white">Agents</h2>
+        <form action={runAgentsNowAction}>
+          <Button type="submit" size="sm">
+            Run all agents now
+          </Button>
+        </form>
+      </div>
+
+      {error ? (
+        <p className="text-sm text-amber-300/80">
+          Couldn&apos;t load agent status: {error} Your <code className="text-amber-200">GH_TOKEN</code>{" "}
+          may need Actions read access.
+        </p>
+      ) : !data ? (
+        <p className="text-sm text-white/40">
+          No runs yet — agents run every 6h via cron, or use the button above.
+        </p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {AGENT_JOB_ORDER.map((jobName) => {
+            const job = jobsByName.get(jobName);
+            const isFailure = job?.conclusion === "failure";
+            return (
+              <div
+                key={jobName}
+                className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-white">{AGENT_JOB_LABELS[jobName]}</p>
+                  <p className="text-xs text-white/40">
+                    {job?.completed_at
+                      ? new Date(job.completed_at).toLocaleString()
+                      : job?.started_at
+                        ? `Started ${new Date(job.started_at).toLocaleString()}`
+                        : "Not run yet"}
+                  </p>
+                </div>
+                <Badge
+                  variant={job?.conclusion === "success" ? "accent" : "outline"}
+                  className={isFailure ? "border-red-400/30 bg-red-400/10 text-red-300" : undefined}
+                >
+                  {job ? job.conclusion ?? job.status : "—"}
+                </Badge>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CredentialsChecklist({
+  secretNames,
+  variables,
+  error,
+}: {
+  secretNames: string[];
+  variables: Record<string, string>;
+  error: string | null;
+}) {
+  const groups = new Map<CredentialGroup, typeof CREDENTIAL_CATALOG>();
+  for (const cred of CREDENTIAL_CATALOG) {
+    groups.set(cred.group, [...(groups.get(cred.group) ?? []), cred]);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Credentials</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {error ? (
+          <p className="text-sm text-amber-300/80">
+            Couldn&apos;t load credential status: {error} Your{" "}
+            <code className="text-amber-200">GH_TOKEN</code> may need Secrets/Variables read access.
+          </p>
+        ) : (
+          Array.from(groups.entries()).map(([group, creds]) => (
+            <div key={group} className="space-y-2">
+              <h3 className="text-sm font-medium text-white/70">{CREDENTIAL_GROUPS[group]}</h3>
+              <div className="space-y-1.5">
+                {creds.map((cred) => {
+                  const configured =
+                    cred.kind === "secret"
+                      ? secretNames.includes(cred.name)
+                      : Boolean(variables[cred.name]);
+                  return (
+                    <div key={cred.name} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-white/70">{cred.label}</span>
+                      {configured ? (
+                        cred.kind === "variable" ? (
+                          <span className="max-w-[55%] truncate text-xs text-emerald-300">
+                            {variables[cred.name]}
+                          </span>
+                        ) : (
+                          <Badge variant="accent">set</Badge>
+                        )
+                      ) : (
+                        <Badge variant="outline">missing</Badge>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -238,6 +390,23 @@ export default async function DashboardPage({
   }
   const groups = categorize(issues);
 
+  let agentRunData: { run: GithubWorkflowRun; jobs: GithubWorkflowJob[] } | null = null;
+  let agentStatusError: string | null = null;
+  try {
+    agentRunData = await getLatestWorkflowRunWithJobs(GROWTH_AGENTS_WORKFLOW);
+  } catch (error) {
+    agentStatusError = error instanceof Error ? error.message : "Unknown error.";
+  }
+
+  let secretNames: string[] = [];
+  let variables: Record<string, string> = {};
+  let credentialsError: string | null = null;
+  try {
+    [secretNames, variables] = await Promise.all([listActionsSecretNames(), listActionsVariables()]);
+  } catch (error) {
+    credentialsError = error instanceof Error ? error.message : "Unknown error.";
+  }
+
   return (
     <Shell>
       <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
@@ -255,6 +424,19 @@ export default async function DashboardPage({
             Log out
           </Button>
         </form>
+      </div>
+
+      <div className="mb-12">
+        <AgentStatusSection data={agentRunData} error={agentStatusError} />
+      </div>
+
+      <div className="mb-12 grid gap-6 lg:grid-cols-2">
+        <CredentialsChecklist
+          secretNames={secretNames}
+          variables={variables}
+          error={credentialsError}
+        />
+        <SetupAssistantChat />
       </div>
 
       <div className="space-y-12">

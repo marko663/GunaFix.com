@@ -143,8 +143,13 @@ The Issues tab works, but it's not the friendliest thing to check from a
 phone. The recommended way to act on leads, drafts and permission requests
 day-to-day is the live `/dashboard` page on the actual website (see the root
 `README.md`'s "Growth agents dashboard" section) — set `DASHBOARD_PASSWORD`,
-`GH_TOKEN` and `GITHUB_REPOSITORY` on the site's hosting provider and it's
-reachable from anywhere, no local process to keep running.
+`GH_TOKEN`, `GITHUB_REPOSITORY` and `ANTHROPIC_API_KEY` on the site's hosting
+provider and it's reachable from anywhere, no local process to keep running.
+That page also shows each agent's last run status, lets you trigger an
+immediate run, and has a chat where you can paste credentials in plain
+language and have them written straight to this list of secrets/variables
+below — see `src/lib/credentialCatalog.ts` on the website for the exact set
+it knows how to write.
 
 `src/dashboard/server.mjs` is the original local version: a small local web
 server (Node's built-in `http`, no framework) that renders the same
