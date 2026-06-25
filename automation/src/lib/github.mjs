@@ -94,6 +94,14 @@ export async function closeIssue(issueNumber) {
   });
 }
 
+/** Generic issue field update (e.g. { body: "..." }) — used to rewrite the daily-pace counter issue in place instead of piling up comments. */
+export async function updateIssue(issueNumber, fields) {
+  return ghFetch(`/issues/${issueNumber}`, {
+    method: "PATCH",
+    body: JSON.stringify(fields),
+  });
+}
+
 export async function ensureLabelsExist(labels) {
   const palette = {
     lead: "0e8a16",
@@ -109,6 +117,8 @@ export async function ensureLabelsExist(labels) {
     "decision:granted": "0e8a16",
     "decision:denied": "b60205",
     "do-not-contact": "1d1d1d",
+    "contact:guessed": "c5def5",
+    "outreach-counter": "5319e7",
   };
   for (const name of labels) {
     try {

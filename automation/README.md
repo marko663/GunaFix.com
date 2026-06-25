@@ -47,7 +47,8 @@ Anything else labeled `urgent` that isn't a structured permission request (e.g. 
 
 Leads live as GitHub Issues (labels: `lead`, `status:new` →
 `status:needs-contact-info` / `status:contacted`, plus `do-not-contact` once
-a lead unsubscribes) — a free CRM with no database to run.
+a lead unsubscribes, and `contact:guessed` on leads where no real email was
+found on their site — see below) — a free CRM with no database to run.
 
 ## Real sending — what this means for your Gmail account
 
@@ -87,6 +88,32 @@ contacts you fast" currently means an immediate, clearly-flagged email
 calls, add a Twilio account and a small `lib/twilio.mjs` that the leader
 calls instead of/alongside `sendEmail` in `handleUrgentItems()`.
 
+## Hitting the daily volume target
+
+`DAILY_EMAIL_TARGET` (default 200) is a target outreach is paced against,
+**not a guaranteed number** — there's no way to guarantee it, because the
+real bottleneck is how many qualifying local businesses with a usable email
+Lead Finder turns up that day, not how fast outreach can send. Two things
+work together to get as close to the target as the available leads allow:
+
+- **Pacing (`src/lib/dailyPace.mjs`).** A pinned `[Outreach] Daily Send
+  Counter` issue tracks how many emails have actually gone out today
+  (resets at UTC midnight). Every Lead Finder run reads it, compares against
+  how far through the day it is, and searches harder than
+  `LEAD_SEARCHES_PER_RUN` when behind pace — up to 3x, capped so a bad day
+  doesn't blow out Places API billing trying to catch up in one run. The
+  leader's run log now shows `Emails sent today: X / Y target` so you can
+  see at a glance whether a given day is on track.
+- **Email-discovery fallback.** Previously a lead with no email scraped off
+  its site just sat stuck in `status:needs-contact-info` forever. Now Lead
+  Finder makes one fallback guess (`info@<their domain>`) and labels that
+  issue `contact:guessed` so it's still visible as lower-confidence. There's
+  no retry/bounce-handling — a wrong guess just goes nowhere once, it isn't
+  repeated — but guessed addresses do bounce more often than scraped ones,
+  which is a real deliverability/reputation cost, so treat the
+  `contact:guessed` label as a signal worth watching, not a free volume
+  lever to lean on hard.
+
 ## Setup checklist
 
 Every credential below is optional independently — each agent logs
@@ -112,6 +139,9 @@ turn pieces on one at a time. Add these as **GitHub Actions secrets**
   the main daily-volume lever; each search is a billed Places API call, so
   raise it gradually and watch your Google Cloud billing). Defaults are
   intentionally broad/general across many industries and US cities.
+- `DAILY_EMAIL_TARGET` (default 200) — see "Hitting the daily volume
+  target" below for how Lead Finder uses this to pace its own search
+  aggressiveness against outreach's actual send rate.
 
 ### 4. Gmail API (real outreach sends + leader's urgent emails)
 1. In Google Cloud Console, create an OAuth client of type **Desktop app**

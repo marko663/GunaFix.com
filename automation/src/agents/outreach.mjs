@@ -16,13 +16,20 @@ import { config, requireFields } from "../config.mjs";
 import { askClaude } from "../lib/anthropic.mjs";
 import { sendEmail, getThread } from "../lib/gmail.mjs";
 import { listIssuesByLabel, addIssueComment, setIssueLabels, ensureLabelsExist, listIssueComments } from "../lib/github.mjs";
+import { recordSends } from "../lib/dailyPace.mjs";
 
 const OPT_OUT_RE = /\b(unsubscribe|remove me|take me off|stop emailing|not interested|do not contact|no thanks)\b/i;
 
-function extractEmailFromBody(body) {
-  const match = body.match(/\*\*Emails found on site:\*\*\s*(.+)/);
-  if (!match) return null;
-  return match[1].split(",")[0].trim();
+/** Real scraped address takes priority; falls back to the single guessed info@domain address leadFinder leaves when nothing was found on the site. */
+function extractContactEmail(body) {
+  const real = body.match(/\*\*Emails found on site:\*\*\s*(.+)/);
+  if (real) {
+    const email = real[1].split(",")[0].trim();
+    if (email) return { email, guessed: false };
+  }
+  const guessed = body.match(/\*\*Guessed email \(unverified\):\*\*\s*(\S+@\S+)/);
+  if (guessed) return { email: guessed[1].trim(), guessed: true };
+  return null;
 }
 
 function extractField(body, label) {
@@ -135,11 +142,12 @@ async function run() {
 
   let sent = 0;
   for (const issue of leadIssues) {
-    const email = extractEmailFromBody(issue.body || "");
-    if (!email) {
+    const contact = extractContactEmail(issue.body || "");
+    if (!contact) {
       console.log(`[outreach] skip #${issue.number} — no email on file yet`);
       continue;
     }
+    const { email, guessed } = contact;
 
     const name = extractField(issue.body, "Business") || issue.title;
     const website = extractField(issue.body, "Website") || "";
@@ -166,15 +174,16 @@ async function run() {
       );
       await addIssueComment(
         issue.number,
-        `**Sent** from ${config.senderEmail || config.ownerEmail} just now.\n\n**To:** ${email}\n**Subject:** ${parsed.subject}\n\n${body}${embedThreadId(result.threadId)}`
+        `**Sent** from ${config.senderEmail || config.ownerEmail} just now${guessed ? " (address guessed — not scraped from the site, unverified)" : ""}.\n\n**To:** ${email}\n**Subject:** ${parsed.subject}\n\n${body}${embedThreadId(result.threadId)}`
       );
       sent++;
-      console.log(`[outreach] sent email for #${issue.number} (${name})`);
+      console.log(`[outreach] sent email for #${issue.number} (${name})${guessed ? " [guessed address]" : ""}`);
     } catch (err) {
       console.error(`[outreach] error on #${issue.number}: ${err.message}`);
     }
   }
 
+  await recordSends(sent).catch((err) => console.error(`[outreach] could not record daily pace: ${err.message}`));
   console.log(`[outreach] done — ${sent} email(s) sent`);
 }
 

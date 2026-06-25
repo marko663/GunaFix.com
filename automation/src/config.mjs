@@ -69,6 +69,9 @@ export const config = {
   // How many distinct category+region searches leadFinder runs per invocation —
   // the main lever for daily lead volume (each search costs a Places API call).
   leadSearchesPerRun: Number(env("LEAD_SEARCHES_PER_RUN", "8")),
+  // Target emails/day outreach aims for. Not a hard cap — lead-finder reads
+  // progress against this each run and searches harder when behind pace.
+  dailyEmailTarget: Number(env("DAILY_EMAIL_TARGET", "200")),
 };
 
 export function requireFields(obj, fields, label) {

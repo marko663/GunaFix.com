@@ -162,6 +162,13 @@ export const CREDENTIAL_CATALOG: CredentialDef[] = [
     label: "Business physical address",
     description: "Postal address included in outreach email footers — required by US CAN-SPAM law since outreach now sends real, unreviewed commercial email.",
   },
+  {
+    name: "DAILY_EMAIL_TARGET",
+    kind: "variable",
+    group: "business",
+    label: "Daily email target",
+    description: "Target emails/day outreach aims for (default 200). Not a hard cap — lead-finder checks progress against this every run and searches harder when behind pace.",
+  },
 ];
 
 export function findCredential(name: string): CredentialDef | undefined {

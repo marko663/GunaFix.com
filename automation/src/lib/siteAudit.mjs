@@ -73,6 +73,17 @@ export function isOutdated(auditResult) {
   return !auditResult.reachable || auditResult.score >= 36;
 }
 
+/** Single-pattern fallback guess (info@domain) for sites where no real email was found in the HTML — unverified, and outreach only ever sends to it once (no bounce handling/retry exists), so a wrong guess just goes nowhere instead of repeating. */
+export function guessContactEmail(website) {
+  try {
+    const host = new URL(website).hostname.replace(/^www\./, "");
+    if (!host.includes(".")) return null;
+    return `info@${host}`;
+  } catch {
+    return null;
+  }
+}
+
 /** Pulls plausible contact emails out of raw HTML (mailto: links + bare text matches). */
 export function extractEmails(html) {
   const found = new Set();

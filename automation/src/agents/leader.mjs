@@ -20,6 +20,7 @@ import {
   listIssueComments,
   ensureLabelsExist,
 } from "../lib/github.mjs";
+import { getTodayProgress } from "../lib/dailyPace.mjs";
 
 const RUN_LOG_TITLE = "[Leader] Run Log";
 
@@ -115,10 +116,11 @@ async function acknowledgeOwnerReplies() {
   return acknowledged;
 }
 
-async function postRunSummary({ counts, urgentHandled, acknowledged }) {
+async function postRunSummary({ counts, pace, urgentHandled, acknowledged }) {
   const body = [
     `Run at ${new Date().toISOString()}`,
     "",
+    `- Emails sent today: ${pace.sentToday} / ${pace.target} target`,
     `- New leads awaiting outreach send: ${counts.newLeads}`,
     `- Leads still missing contact info: ${counts.needsInfo}`,
     `- Leads emailed so far (lifetime, open): ${counts.contacted}`,
@@ -143,9 +145,10 @@ async function run() {
   await ensureLabelsExist(["leader-notified", "leader-report", "urgent", "leader-acknowledged"]);
 
   const counts = await gatherCounts();
+  const pace = await getTodayProgress().catch(() => ({ sentToday: 0, target: config.dailyEmailTarget }));
   const urgentHandled = await handleUrgentItems();
   const acknowledged = await acknowledgeOwnerReplies();
-  await postRunSummary({ counts, urgentHandled, acknowledged });
+  await postRunSummary({ counts, pace, urgentHandled, acknowledged });
 }
 
 run().catch((err) => {
