@@ -108,6 +108,7 @@ export async function ensureLabelsExist(labels) {
     "awaiting-permission": "fbca04",
     "decision:granted": "0e8a16",
     "decision:denied": "b60205",
+    "do-not-contact": "1d1d1d",
   };
   for (const name of labels) {
     try {

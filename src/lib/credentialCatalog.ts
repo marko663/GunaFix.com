@@ -69,7 +69,7 @@ export const CREDENTIAL_CATALOG: CredentialDef[] = [
     kind: "secret",
     group: "gmail",
     label: "Gmail refresh token",
-    description: "Printed by automation/src/scripts/getGmailRefreshToken.mjs after a one-time local sign-in.",
+    description: "Printed by automation/src/scripts/getGmailRefreshToken.mjs after a one-time local sign-in. Grants send + read access so outreach can send real emails and detect unsubscribe replies.",
   },
   {
     name: "SENDER_EMAIL",
@@ -154,6 +154,13 @@ export const CREDENTIAL_CATALOG: CredentialDef[] = [
     group: "business",
     label: "Owner email",
     description: "Where the Leader agent sends urgent alerts.",
+  },
+  {
+    name: "BUSINESS_PHYSICAL_ADDRESS",
+    kind: "variable",
+    group: "business",
+    label: "Business physical address",
+    description: "Postal address included in outreach email footers — required by US CAN-SPAM law since outreach now sends real, unreviewed commercial email.",
   },
 ];
 

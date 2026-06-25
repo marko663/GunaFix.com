@@ -11,7 +11,8 @@ import { createServer } from "node:http";
 
 const PORT = 53682;
 const REDIRECT_URI = `http://localhost:${PORT}`;
-const SCOPE = "https://www.googleapis.com/auth/gmail.compose";
+// compose+send to actually send outreach, readonly so outreach can detect unsubscribe replies
+const SCOPE = "https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.readonly";
 
 const clientId = process.env.GMAIL_CLIENT_ID;
 const clientSecret = process.env.GMAIL_CLIENT_SECRET;
@@ -64,7 +65,10 @@ const server = createServer(async (req, res) => {
       console.error("Token exchange failed:", data);
       process.exit(1);
     }
-    console.log("\nSuccess! Save this as the GMAIL_REFRESH_TOKEN GitHub secret:\n");
+    console.log(
+      "\nIf you already had a GMAIL_REFRESH_TOKEN from before outreach sent for real, it was issued with only the compose scope — replace it with this new one so unsubscribe-detection works too.\n"
+    );
+    console.log("Success! Save this as the GMAIL_REFRESH_TOKEN GitHub secret:\n");
     console.log(data.refresh_token);
     console.log("\n(If refresh_token is missing, the account was already authorized before — revoke access at https://myaccount.google.com/permissions and run this script again.)\n");
     process.exit(0);

@@ -14,7 +14,8 @@ export const config = {
   businessUrl: env("BUSINESS_URL", "https://gunafix.com"),
   ownerName: env("OWNER_NAME", "Marko"),
   ownerEmail: env("OWNER_EMAIL", "markoguna9@gmail.com"),
-  senderEmail: env("SENDER_EMAIL"), // Gmail address outreach drafts/sends are created from
+  senderEmail: env("SENDER_EMAIL"), // Gmail address outreach is sent from
+  businessPhysicalAddress: env("BUSINESS_PHYSICAL_ADDRESS"), // CAN-SPAM: required postal address for commercial email footers
 
   // Anthropic (Claude) — used for drafting outreach copy, audit summaries, social captions
   anthropicApiKey: env("ANTHROPIC_API_KEY"),
@@ -64,7 +65,10 @@ export const config = {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
-  leadsPerRun: Number(env("LEADS_PER_RUN", "15")),
+  leadsPerRun: Number(env("LEADS_PER_RUN", "20")),
+  // How many distinct category+region searches leadFinder runs per invocation —
+  // the main lever for daily lead volume (each search costs a Places API call).
+  leadSearchesPerRun: Number(env("LEAD_SEARCHES_PER_RUN", "8")),
 };
 
 export function requireFields(obj, fields, label) {

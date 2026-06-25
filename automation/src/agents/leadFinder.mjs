@@ -3,6 +3,10 @@
 // business's website for "outdated" signals, and opens a GitHub Issue (the
 // lead board) for every qualifying prospect with whatever contact info it
 // found. Pure read/research — never contacts anyone.
+//
+// Runs config.leadSearchesPerRun distinct category+region searches per
+// invocation (instead of just one) — that's the main lever for sourcing
+// enough leads/day to keep the outreach agent's real-send volume up.
 
 import { config, requireFields } from "../config.mjs";
 import { searchPlaces, getPlaceDetails, pickRandom } from "../lib/places.mjs";
@@ -38,19 +42,12 @@ function issueBody({ name, address, phone, website, audit, query }) {
   }
   lines.push(
     "",
-    "_Opened automatically by the GunaFix Lead Finder agent. Move through status:new → status:drafted → status:contacted as it progresses. Add an email manually (or wait for outreach agent to find one) if status is `status:needs-contact-info`._"
+    "_Opened automatically by the GunaFix Lead Finder agent. Moves status:new → status:contacted once the outreach agent sends an email. Add an email manually (or wait for outreach agent to find one) if status is `status:needs-contact-info`._"
   );
   return lines.join("\n");
 }
 
-async function run() {
-  if (!requireFields(config, ["googlePlacesApiKey"], "leadFinder")) return;
-  if (!requireFields(config, ["githubToken", "githubRepo"], "leadFinder (github)")) return;
-
-  await ensureLabelsExist(LABELS);
-
-  const category = pickRandom(config.leadCategories, 1)[0];
-  const region = pickRandom(config.leadRegions, 1)[0];
+async function runQuery(category, region) {
   const query = `${category} in ${region}`;
   console.log(`[leadFinder] searching: "${query}"`);
 
@@ -58,11 +55,11 @@ async function run() {
   try {
     results = await searchPlaces(query);
   } catch (err) {
-    console.error(`[leadFinder] search failed: ${err.message}`);
-    return;
+    console.error(`[leadFinder] search failed for "${query}": ${err.message}`);
+    return 0;
   }
 
-  console.log(`[leadFinder] ${results.length} places found, scanning up to ${config.leadsPerRun}`);
+  console.log(`[leadFinder] ${results.length} places found for "${query}", scanning up to ${config.leadsPerRun}`);
 
   let created = 0;
   for (const place of results.slice(0, config.leadsPerRun)) {
@@ -111,7 +108,24 @@ async function run() {
     }
   }
 
-  console.log(`[leadFinder] done — ${created} new lead(s) created from "${query}"`);
+  console.log(`[leadFinder] "${query}" done — ${created} new lead(s)`);
+  return created;
+}
+
+async function run() {
+  if (!requireFields(config, ["googlePlacesApiKey"], "leadFinder")) return;
+  if (!requireFields(config, ["githubToken", "githubRepo"], "leadFinder (github)")) return;
+
+  await ensureLabelsExist(LABELS);
+
+  let totalCreated = 0;
+  for (let i = 0; i < config.leadSearchesPerRun; i++) {
+    const category = pickRandom(config.leadCategories, 1)[0];
+    const region = pickRandom(config.leadRegions, 1)[0];
+    totalCreated += await runQuery(category, region);
+  }
+
+  console.log(`[leadFinder] done — ${totalCreated} new lead(s) created across ${config.leadSearchesPerRun} search(es)`);
 }
 
 run().catch((err) => {

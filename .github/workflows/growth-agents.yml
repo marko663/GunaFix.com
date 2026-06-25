@@ -2,8 +2,16 @@ name: Growth Agents
 
 on:
   schedule:
-    # Every 6 hours. GitHub Actions cron is UTC and best-effort (can run a
-    # bit late under load) — close enough for "24/7" background growth work.
+    # Outreach drains the send queue often so emails go out close to
+    # real-time instead of batching for hours. GitHub Actions cron is UTC
+    # and best-effort (can run a bit late under load).
+    - cron: "*/15 * * * *"
+    # Lead Finder runs hourly — every Places Text Search call costs real
+    # Google Cloud billing, so this is the volume lever, kept off the
+    # 15-minute tick to keep that cost predictable.
+    - cron: "0 * * * *"
+    # Social content, search/traffic digest, and the leader's rollup are not
+    # time-critical — every 6 hours is plenty.
     - cron: "0 */6 * * *"
   workflow_dispatch: {}
 
@@ -16,10 +24,15 @@ env:
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   BUSINESS_NAME: ${{ vars.BUSINESS_NAME }}
   BUSINESS_URL: ${{ vars.BUSINESS_URL }}
+  BUSINESS_PHYSICAL_ADDRESS: ${{ vars.BUSINESS_PHYSICAL_ADDRESS }}
   OWNER_NAME: ${{ vars.OWNER_NAME }}
   OWNER_EMAIL: ${{ vars.OWNER_EMAIL }}
   SENDER_EMAIL: ${{ vars.SENDER_EMAIL }}
   GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+  LEAD_CATEGORIES: ${{ vars.LEAD_CATEGORIES }}
+  LEAD_REGIONS: ${{ vars.LEAD_REGIONS }}
+  LEADS_PER_RUN: ${{ vars.LEADS_PER_RUN }}
+  LEAD_SEARCHES_PER_RUN: ${{ vars.LEAD_SEARCHES_PER_RUN }}
   GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
   GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
   GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
@@ -33,6 +46,7 @@ env:
 
 jobs:
   lead-finder:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 * * * *'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +57,10 @@ jobs:
         working-directory: automation
 
   outreach:
-    needs: lead-finder
+    # No `needs: lead-finder` — outreach runs on its own fast cadence and
+    # just drains whatever's currently in status:new, independent of
+    # whether lead-finder happened to fire on this same trigger.
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/15 * * * *' || github.event.schedule == '0 */6 * * *'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,6 +71,7 @@ jobs:
         working-directory: automation
 
   social-content:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 */6 * * *'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +82,7 @@ jobs:
         working-directory: automation
 
   search-traffic:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 */6 * * *'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,8 +93,8 @@ jobs:
         working-directory: automation
 
   leader:
+    if: always() && (github.event_name == 'workflow_dispatch' || github.event.schedule == '0 */6 * * *')
     needs: [outreach, social-content, search-traffic]
-    if: always()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

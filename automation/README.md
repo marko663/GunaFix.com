@@ -1,11 +1,18 @@
 # GunaFix Growth Agents
 
 24/7 background automation that grows the GunaFix business: finds local
-businesses with outdated websites, drafts personalized outreach emails for
-your approval, writes short-form video scripts/captions for social, and
-keeps an eye on website traffic + Google Search Console performance. One **leader**
-agent rolls everything up and is the only one allowed to email you directly
-— and only when something actually needs your attention.
+businesses with outdated websites, and sends each one a personalized cold
+outreach email for real — automatically, in real time, from your own Gmail
+account, no draft/approval step. It also writes short-form video
+scripts/captions for social, and keeps an eye on website traffic + Google
+Search Console performance. One **leader** agent rolls everything up and is
+the only one allowed to email you directly — and only when something
+actually needs your attention.
+
+**⚠️ Outreach sends real, unreviewed email automatically, at volume.** This
+was an explicit choice (real Gmail sending + a daily volume target) over the
+safer draft-and-approve design this project started with. Before turning it
+on, read "Real sending — what this means for your Gmail account" below.
 
 This is a separate, dependency-free Node package (plain `.mjs`, Node's
 built-in `fetch`/`http`/`crypto` only) so it never touches the Next.js
@@ -19,7 +26,7 @@ running yourself.
 | Agent | File | Does | Can contact you directly? |
 |---|---|---|---|
 | Lead Finder | `src/agents/leadFinder.mjs` | Searches local businesses (Google Places), audits their site, opens a GitHub Issue per qualifying lead | No |
-| Outreach | `src/agents/outreach.mjs` | Drafts a personalized cold email per lead with Claude, saves it as a **Gmail draft**, and asks permission to send it for you | No — emails only go out as a draft, or after you say yes (see below) |
+| Outreach | `src/agents/outreach.mjs` | Drafts a personalized cold email per lead with Claude and **sends it for real**, immediately, from your own Gmail account. Detects "unsubscribe" replies and permanently suppresses that lead | No — it emails *leads*, not you; see below |
 | Social Content | `src/agents/socialContent.mjs` | Writes a short video script + IG/TikTok/Facebook captions, files it as an Issue to film, and asks permission to auto-post the FB caption | No — posts only after you say yes |
 | Search & Traffic | `src/agents/searchTraffic.mjs` | Posts a GA4 + Google Search Console digest and flags the issue `urgent` on anomalies (traffic cliffs, organic click drops, ranking slides) | No |
 | **Leader** | `src/agents/leader.mjs` | Rolls up the run, emails you immediately on anything `urgent` (including permission requests from the agents above), posts a run log, acknowledges any other reply you leave on an urgent issue | **Yes — the only one** |
@@ -32,18 +39,47 @@ Some agents need a one-time "yes" before they touch something irreversible (send
 2. You reply on that issue with a comment containing **yes**/**approve** or **no**/**deny** — or click **Approve**/**Deny** in the local dashboard's "Needs your decision" section, which just posts the same kind of comment.
 3. The next time the owning agent runs (every 6h via cron, or `workflow_dispatch` from the Actions tab for an immediate check), `resolvePermissions()` picks up your reply, closes the issue, and hands the agent back what it needs to act.
 
-Today this covers: auto-sending a specific outreach draft, and auto-posting a specific Facebook caption. Nothing posts or sends automatically without you saying yes first.
+Today this covers: auto-posting a specific Facebook caption. Outreach used
+to ask permission before sending too, but per an explicit choice to make
+sending real and high-volume, it no longer does — see below.
 
 Anything else labeled `urgent` that isn't a structured permission request (e.g. a traffic-cliff anomaly with no proposed fix) — replying on that issue just gets you an acknowledgment from the Leader; there's no free-form instruction parser yet.
 
 Leads live as GitHub Issues (labels: `lead`, `status:new` →
-`status:drafted` / `status:needs-contact-info` / `status:contacted`) — a
-free CRM with no database to run. Move a lead to `status:contacted`
-yourself once you've sent the drafted email.
+`status:needs-contact-info` / `status:contacted`, plus `do-not-contact` once
+a lead unsubscribes) — a free CRM with no database to run.
 
-**Nothing emails a prospect automatically.** Outreach only ever creates a
-Gmail draft; you review and hit send. This was an explicit choice so a bad
-draft can never go out under your name.
+## Real sending — what this means for your Gmail account
+
+Outreach sends every drafted email immediately and automatically, from
+whatever Gmail account you authorized (`GMAIL_REFRESH_TOKEN` — see setup
+below), with no per-email review. This is a deliberate tradeoff for real,
+high-volume, real-time sending instead of the safer draft-and-approve flow.
+A few real risks worth knowing before you turn the volume up:
+
+- **Account risk.** Personal Gmail accounts aren't built for bulk outbound
+  email. Sending many near-identical cold emails per day is the kind of
+  pattern Google's abuse detection looks for, and can get the account
+  rate-limited or suspended well before Gmail's documented 500/day cap.
+  Watch the account for warnings, and consider a Google Workspace account
+  (higher limits, built for business sending) if volume keeps climbing.
+- **Legal compliance (US CAN-SPAM).** Commercial email needs a valid
+  physical postal address and a working opt-out. Set
+  `BUSINESS_PHYSICAL_ADDRESS` — every send appends it plus an unsubscribe
+  line. Outreach also re-checks every previously-contacted lead's Gmail
+  thread each run and labels it `do-not-contact` (permanently skipped) the
+  moment it sees an "unsubscribe"-style reply. This only catches replies in
+  the *same thread* as a prior send — it's not a general suppression list.
+- **Deliverability.** Sending 200+/day from a brand-new sending pattern
+  tends to land in spam at first ("reputation warm-up"). Going out steadily
+  over the day (the `*/15 * * * *` outreach schedule) rather than in one
+  burst helps, but expect some tuning.
+- **Volume is bounded by real leads with a real email on file**, not by
+  outreach itself — it sends to every `status:new` lead it has an address
+  for, every run, with no cap. Hitting a daily target depends on Lead
+  Finder sourcing that many qualifying businesses with a discoverable email
+  (see `LEAD_SEARCHES_PER_RUN` below) — actual yield varies by
+  category/region and isn't guaranteed.
 
 **No phone calls.** There's no Twilio/telephony wired up, so "leader
 contacts you fast" currently means an immediate, clearly-flagged email
@@ -71,10 +107,13 @@ turn pieces on one at a time. Add these as **GitHub Actions secrets**
 - Secret: `GOOGLE_PLACES_API_KEY`
 - Optional variables to steer search: `LEAD_CATEGORIES` (comma-separated,
   e.g. `plumber,dentist,roofing contractor`), `LEAD_REGIONS` (comma-separated
-  `City State`), `LEADS_PER_RUN` (default 15). Defaults are intentionally
-  broad/general across many industries and US cities.
+  `City State`), `LEADS_PER_RUN` (results scanned per search, default 20),
+  `LEAD_SEARCHES_PER_RUN` (distinct searches per run, default 8 — this is
+  the main daily-volume lever; each search is a billed Places API call, so
+  raise it gradually and watch your Google Cloud billing). Defaults are
+  intentionally broad/general across many industries and US cities.
 
-### 4. Gmail API (outreach drafts + leader's urgent emails)
+### 4. Gmail API (real outreach sends + leader's urgent emails)
 1. In Google Cloud Console, create an OAuth client of type **Desktop app**
    and enable the **Gmail API**.
 2. Locally (not in CI):
@@ -82,11 +121,19 @@ turn pieces on one at a time. Add these as **GitHub Actions secrets**
    cd automation
    GMAIL_CLIENT_ID=xxx GMAIL_CLIENT_SECRET=yyy node src/scripts/getGmailRefreshToken.mjs
    ```
-3. Open the printed URL, sign in with the Gmail account you want
-   drafts/alerts to come from, approve access.
-4. The script prints a refresh token — save it.
+3. Open the printed URL, sign in with **the Gmail account you want outreach
+   to send from** (the `From:` header is whatever `SENDER_EMAIL`/`OWNER_EMAIL`
+   is set to, but Gmail will only actually send as an address this account is
+   authorized for — they need to match), approve access. The requested
+   scope covers both sending and reading replies (needed for unsubscribe
+   detection).
+4. The script prints a refresh token — save it. If you set this up before
+   outreach sent for real, your old token only has the compose scope —
+   re-run the script and replace it.
 5. Secrets: `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`.
-   Variable: `SENDER_EMAIL` (defaults to `OWNER_EMAIL` if unset).
+   Variables: `SENDER_EMAIL` (defaults to `OWNER_EMAIL` if unset),
+   `BUSINESS_PHYSICAL_ADDRESS` (required by US CAN-SPAM law for the
+   footer on every outreach email — see "Real sending" above).
 
 ### 5. GA4 Data API (website traffic digest)
 1. In Google Cloud Console, create a service account, enable the
@@ -176,12 +223,16 @@ the same data.
    ```
 4. Open `http://localhost:4040` (override with `DASHBOARD_PORT`).
 
-Outreach emails still have to be sent by hand from Gmail — neither dashboard
-touches the draft-only outreach flow, they only mirror GitHub.
+Outreach now sends for real on its own schedule — neither dashboard is in
+that loop, they only mirror GitHub.
 
 ## Running on GitHub Actions
 
-Already wired up in `.github/workflows/growth-agents.yml`: runs every 6
-hours via cron, plus `workflow_dispatch` for manual "run it now" from the
+Already wired up in `.github/workflows/growth-agents.yml`, with three
+schedules instead of one cadence for everything: outreach drains its send
+queue every 15 minutes (real-time sending), Lead Finder sources new leads
+hourly (kept slower since it's the one with a real per-call Google Cloud
+cost), and social content/search-traffic/leader stay on the original every-6-hours
+cadence. `workflow_dispatch` still works for manual "run it now" from the
 Actions tab. Add the secrets/variables above and it starts working — pieces
 without credentials just no-op until you add them.

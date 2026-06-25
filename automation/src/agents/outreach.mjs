@@ -1,14 +1,23 @@
 // Outreach agent — for every lead issue that has a known contact email,
-// asks Claude to draft a short personalized cold email, then creates a
-// Gmail DRAFT (never sent automatically). The owner reviews and sends it
-// themselves from their own Gmail. Moves the issue from status:new to
-// status:drafted and posts the draft text as a comment for visibility.
+// asks Claude to draft a short personalized cold email and SENDS IT FOR
+// REAL right away, from the owner's own Gmail account. There is no
+// draft/approval step — the owner explicitly chose real, automatic, high-volume
+// sending over a review queue, so every run drains the full backlog of
+// status:new leads with a known email. Moves the issue straight to
+// status:contacted and posts the sent text as a comment for visibility.
+//
+// Because this sends unsolicited commercial email automatically, every send
+// includes a CAN-SPAM footer (business name + BUSINESS_PHYSICAL_ADDRESS) and
+// every run first checks prior sends' Gmail threads for an "unsubscribe"-style
+// reply, suppressing that lead permanently (label: do-not-contact) before
+// anything new goes out.
 
 import { config, requireFields } from "../config.mjs";
 import { askClaude } from "../lib/anthropic.mjs";
-import { createDraft, sendEmail } from "../lib/gmail.mjs";
-import { listIssuesByLabel, addIssueComment, setIssueLabels, getIssue } from "../lib/github.mjs";
-import { requestPermission, resolvePermissions } from "../lib/permissions.mjs";
+import { sendEmail, getThread } from "../lib/gmail.mjs";
+import { listIssuesByLabel, addIssueComment, setIssueLabels, ensureLabelsExist, listIssueComments } from "../lib/github.mjs";
+
+const OPT_OUT_RE = /\b(unsubscribe|remove me|take me off|stop emailing|not interested|do not contact|no thanks)\b/i;
 
 function extractEmailFromBody(body) {
   const match = body.match(/\*\*Emails found on site:\*\*\s*(.+)/);
@@ -19,6 +28,26 @@ function extractEmailFromBody(body) {
 function extractField(body, label) {
   const match = body.match(new RegExp(`\\*\\*${label}:\\*\\*\\s*(.+)`));
   return match ? match[1].trim() : null;
+}
+
+function embedThreadId(threadId) {
+  return `\n\n<!-- gmail-thread\n${JSON.stringify({ threadId })}\n-->`;
+}
+
+function extractThreadId(body) {
+  const m = (body || "").match(/<!-- gmail-thread\n([\s\S]+?)\n-->/);
+  if (!m) return null;
+  try {
+    return JSON.parse(m[1]).threadId || null;
+  } catch {
+    return null;
+  }
+}
+
+function complianceFooter() {
+  const lines = ["", "—", config.businessPhysicalAddress ? `${config.businessName} · ${config.businessPhysicalAddress}` : config.businessName];
+  lines.push('Reply "unsubscribe" and we will not contact you again.');
+  return lines.join("\n");
 }
 
 function buildPrompt({ name, website, issues }) {
@@ -47,29 +76,37 @@ function parseDraft(text) {
   return { subject: subjectMatch[1].trim(), body: bodyMatch[1].trim() };
 }
 
-/** Sends drafts the owner approved for auto-send via a permission request, and moves that lead to status:contacted. */
-async function sendApprovedDrafts() {
-  const resolved = await resolvePermissions("outreach-send");
-  for (const { decision, payload } of resolved) {
-    if (!payload) continue;
-    if (decision === "denied") {
-      await addIssueComment(
-        payload.leadIssue,
-        "You declined auto-send — the draft is still sitting in Gmail drafts for you to review and send by hand."
-      ).catch(() => {});
-      continue;
+/** Scans prior sends' Gmail threads for an unsubscribe-style reply and permanently suppresses that lead. */
+async function checkOptOuts() {
+  const contacted = await listIssuesByLabel("status:contacted").catch(() => []);
+  const leads = contacted.filter(
+    (i) => i.labels.some((l) => l.name === "lead") && !i.labels.some((l) => l.name === "do-not-contact")
+  );
+
+  let suppressed = 0;
+  for (const issue of leads) {
+    const comments = await listIssueComments(issue.number).catch(() => []);
+    let threadId = null;
+    for (const c of comments) {
+      const id = extractThreadId(c.body);
+      if (id) threadId = id; // last embedded thread id wins, in case of repeat contact
     }
+    if (!threadId) continue;
     try {
-      await sendEmail({ to: payload.to, subject: payload.subject, body: payload.body });
-      const lead = await getIssue(payload.leadIssue);
-      const labels = lead.labels.map((l) => l.name).map((l) => (l.startsWith("status:") ? "status:contacted" : l));
-      await setIssueLabels(payload.leadIssue, labels);
-      await addIssueComment(payload.leadIssue, `**Sent automatically** per your approval — to ${payload.to}.`);
-      console.log(`[outreach] auto-sent approved draft for lead #${payload.leadIssue}`);
+      const messages = await getThread(threadId);
+      const replies = messages.slice(1); // first message is our own outgoing email
+      const optOut = replies.find((m) => OPT_OUT_RE.test(m.body) || OPT_OUT_RE.test(m.snippet));
+      if (!optOut) continue;
+
+      await setIssueLabels(issue.number, [...issue.labels.map((l) => l.name), "do-not-contact"]);
+      await addIssueComment(issue.number, "**Unsubscribe reply detected** — marked do-not-contact, this lead will not be emailed again.");
+      suppressed++;
+      console.log(`[outreach] suppressed #${issue.number} — unsubscribe reply`);
     } catch (err) {
-      console.error(`[outreach] failed to send approved draft for #${payload.leadIssue}: ${err.message}`);
+      console.error(`[outreach] opt-out check failed for #${issue.number}: ${err.message}`);
     }
   }
+  if (suppressed) console.log(`[outreach] ${suppressed} lead(s) suppressed this run`);
 }
 
 async function run() {
@@ -83,14 +120,20 @@ async function run() {
     )
   )
     return;
+  if (!config.businessPhysicalAddress) {
+    console.log(
+      "[outreach] WARNING: BUSINESS_PHYSICAL_ADDRESS is not set — sending real commercial email without a postal address in the footer is a CAN-SPAM violation in the US. Set it as soon as possible."
+    );
+  }
 
-  await sendApprovedDrafts();
+  await ensureLabelsExist(["status:contacted", "do-not-contact"]);
+  await checkOptOuts();
 
   const issues = await listIssuesByLabel("status:new");
   const leadIssues = issues.filter((i) => i.labels.some((l) => l.name === "lead"));
   console.log(`[outreach] ${leadIssues.length} new lead(s) to evaluate`);
 
-  let drafted = 0;
+  let sent = 0;
   for (const issue of leadIssues) {
     const email = extractEmailFromBody(issue.body || "");
     if (!email) {
@@ -114,30 +157,25 @@ async function run() {
         continue;
       }
 
-      await createDraft({ to: email, subject: parsed.subject, body: parsed.body });
-      await addIssueComment(
-        issue.number,
-        `**Draft created in ${config.senderEmail || config.ownerEmail}'s Gmail drafts.** Review and send manually.\n\n**To:** ${email}\n**Subject:** ${parsed.subject}\n\n${parsed.body}`
-      );
+      const body = `${parsed.body}${complianceFooter()}`;
+      const result = await sendEmail({ to: email, subject: parsed.subject, body });
+
       await setIssueLabels(
         issue.number,
-        issue.labels.map((l) => l.name).map((l) => (l === "status:new" ? "status:drafted" : l))
+        issue.labels.map((l) => l.name).map((l) => (l === "status:new" ? "status:contacted" : l))
       );
-      await requestPermission({
-        type: "outreach-send",
-        title: `[Permission] Auto-send outreach to ${name}?`,
-        question: `I drafted a cold email to **${name}** (${email}) and saved it as a Gmail draft. Want me to send it automatically instead of waiting for you to review and hit send yourself?`,
-        context: `Lead: #${issue.number} — ${issue.html_url}\n\n**Subject:** ${parsed.subject}\n\n${parsed.body}`,
-        payload: { leadIssue: issue.number, to: email, subject: parsed.subject, body: parsed.body },
-      });
-      drafted++;
-      console.log(`[outreach] drafted email for #${issue.number} (${name})`);
+      await addIssueComment(
+        issue.number,
+        `**Sent** from ${config.senderEmail || config.ownerEmail} just now.\n\n**To:** ${email}\n**Subject:** ${parsed.subject}\n\n${body}${embedThreadId(result.threadId)}`
+      );
+      sent++;
+      console.log(`[outreach] sent email for #${issue.number} (${name})`);
     } catch (err) {
       console.error(`[outreach] error on #${issue.number}: ${err.message}`);
     }
   }
 
-  console.log(`[outreach] done — ${drafted} draft(s) created`);
+  console.log(`[outreach] done — ${sent} email(s) sent`);
 }
 
 run().catch((err) => {

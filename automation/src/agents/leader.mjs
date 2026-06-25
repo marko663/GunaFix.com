@@ -24,16 +24,18 @@ import {
 const RUN_LOG_TITLE = "[Leader] Run Log";
 
 async function gatherCounts() {
-  const [newLeads, needsInfo, drafted, socialNew] = await Promise.all([
+  const [newLeads, needsInfo, contacted, suppressed, socialNew] = await Promise.all([
     listIssuesByLabel("status:new").catch(() => []),
     listIssuesByLabel("status:needs-contact-info").catch(() => []),
-    listIssuesByLabel("status:drafted").catch(() => []),
+    listIssuesByLabel("status:contacted").catch(() => []),
+    listIssuesByLabel("do-not-contact").catch(() => []),
     listIssuesByLabel("social-content").catch(() => []),
   ]);
   return {
     newLeads: newLeads.filter((i) => i.labels.some((l) => l.name === "lead")).length,
     needsInfo: needsInfo.filter((i) => i.labels.some((l) => l.name === "lead")).length,
-    drafted: drafted.filter((i) => i.labels.some((l) => l.name === "lead")).length,
+    contacted: contacted.filter((i) => i.labels.some((l) => l.name === "lead")).length,
+    suppressed: suppressed.filter((i) => i.labels.some((l) => l.name === "lead")).length,
     socialNew: socialNew.length,
   };
 }
@@ -117,9 +119,10 @@ async function postRunSummary({ counts, urgentHandled, acknowledged }) {
   const body = [
     `Run at ${new Date().toISOString()}`,
     "",
-    `- New leads awaiting outreach draft: ${counts.newLeads}`,
+    `- New leads awaiting outreach send: ${counts.newLeads}`,
     `- Leads still missing contact info: ${counts.needsInfo}`,
-    `- Outreach drafts created (lifetime, open): ${counts.drafted}`,
+    `- Leads emailed so far (lifetime, open): ${counts.contacted}`,
+    `- Leads that unsubscribed (do-not-contact): ${counts.suppressed}`,
     `- Open social content pieces ready to film: ${counts.socialNew}`,
     `- Urgent items alerted this run: ${urgentHandled.length}`,
     `- Owner replies acknowledged this run: ${acknowledged.length}`,
