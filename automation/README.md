@@ -163,11 +163,17 @@ turn pieces on one at a time. Add these as **GitHub Actions secrets**
 - Secret: `GOOGLE_PLACES_API_KEY`
 - Optional variables to steer search: `LEAD_CATEGORIES` (comma-separated,
   e.g. `plumber,dentist,roofing contractor`), `LEAD_REGIONS` (comma-separated
-  `City State`), `LEADS_PER_RUN` (results scanned per search, default 20),
+  `City Country`/`City State`, e.g. `Berlin Germany,Chicago IL`),
+  `LEADS_PER_RUN` (results scanned per search, default 20),
   `LEAD_SEARCHES_PER_RUN` (distinct searches per run, default 8 — this is
   the main daily-volume lever; each search is a billed Places API call, so
   raise it gradually and watch your Google Cloud billing). Defaults are
-  intentionally broad/general across many industries and US cities.
+  intentionally broad/general across many industries and cities worldwide
+  (not US-only) — narrow `LEAD_REGIONS` if you'd rather target specific
+  countries/cities. Note unsolicited commercial email is regulated
+  differently by jurisdiction (e.g. the EU/Germany's UWG generally expects
+  prior consent, unlike the US's opt-out CAN-SPAM model) — worldwide
+  sourcing means worldwide exposure to those rules.
 - `DAILY_EMAIL_TARGET` (default 200) — see "Hitting the daily volume
   target" below for how Lead Finder uses this to pace its own search
   aggressiveness against outreach's actual send rate.

@@ -53,7 +53,7 @@ export const config = {
   metaIgUserId: env("META_IG_USER_ID"),
   metaGraphApiVersion: env("META_GRAPH_API_VERSION", "v21.0"),
 
-  // Lead sourcing defaults — broad/general per owner's explicit choice
+  // Lead sourcing defaults — broad/general, worldwide, per owner's explicit choice
   leadCategories: env(
     "LEAD_CATEGORIES",
     "plumber,electrician,dentist,lawyer,roofing contractor,hair salon,restaurant,auto repair shop,real estate agency,accounting firm,landscaping company,chiropractor,veterinarian,hvac contractor,bakery"
@@ -63,7 +63,7 @@ export const config = {
     .filter(Boolean),
   leadRegions: env(
     "LEAD_REGIONS",
-    "Chicago IL,Houston TX,Phoenix AZ,Philadelphia PA,San Antonio TX,Columbus OH,Charlotte NC,Indianapolis IN,Denver CO,Nashville TN"
+    "New York NY,London United Kingdom,Berlin Germany,Toronto Canada,Sydney Australia,Dubai UAE,Singapore,Mumbai India,Sao Paulo Brazil,Tokyo Japan"
   )
     .split(",")
     .map((s) => s.trim())
