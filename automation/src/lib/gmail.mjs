@@ -51,14 +51,15 @@ async function gmailFetch(path, accessTok, opts = {}) {
   return res.status === 204 ? null : res.json();
 }
 
-/** Sends an email immediately. Used for real outreach sends and the leader's urgent alerts. Returns {id, threadId, ...}. */
-export async function sendEmail({ to, subject, body }) {
+/** Sends an email immediately. Used for real outreach sends and the leader's urgent alerts. Pass `threadId` to reply within an existing thread (e.g. an auto-reply to a lead). Returns {id, threadId, ...}. */
+export async function sendEmail({ to, subject, body, threadId }) {
   const tok = await accessToken();
   const from = config.senderEmail || config.ownerEmail;
   const raw = buildRawMessage({ from, to, subject, body });
+  const payload = threadId ? { raw, threadId } : { raw };
   return gmailFetch("/messages/send", tok, {
     method: "POST",
-    body: JSON.stringify({ raw }),
+    body: JSON.stringify(payload),
   });
 }
 

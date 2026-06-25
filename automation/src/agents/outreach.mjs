@@ -8,13 +8,17 @@
 //
 // Because this sends unsolicited commercial email automatically, every send
 // includes a CAN-SPAM footer (business name + BUSINESS_PHYSICAL_ADDRESS) and
-// every run first checks prior sends' Gmail threads for an "unsubscribe"-style
-// reply, suppressing that lead permanently (label: do-not-contact) before
-// anything new goes out.
+// every run first checks prior sends' Gmail threads for replies: an
+// "unsubscribe"-style reply suppresses that lead permanently (label:
+// do-not-contact); any other reply gets posted to the issue in full (so it
+// shows up on the dashboard) and triggers an automatic Claude-drafted
+// response that books a real meeting slot on the owner's Google Calendar
+// (label: status:meeting-booked) — see checkReplies()/respondAndBook() below.
 
 import { config, requireFields } from "../config.mjs";
 import { askClaude } from "../lib/anthropic.mjs";
 import { sendEmail, getThread } from "../lib/gmail.mjs";
+import { findNextAvailableSlot, createCalendarEvent, formatSlot } from "../lib/calendar.mjs";
 import { listIssuesByLabel, addIssueComment, setIssueLabels, ensureLabelsExist, listIssueComments } from "../lib/github.mjs";
 import { recordSends } from "../lib/dailyPace.mjs";
 
@@ -57,6 +61,12 @@ function complianceFooter() {
   return lines.join("\n");
 }
 
+/** Pulls the bare address out of a Gmail "From" header (`"Name <addr>"` or just `addr`). */
+function extractEmailAddress(from) {
+  const m = (from || "").match(/<([^>]+)>/);
+  return (m ? m[1] : from || "").trim();
+}
+
 function buildPrompt({ name, website, issues }) {
   return `You are writing a short, friendly, non-pushy cold outreach email on behalf of ${config.ownerName}, who runs ${config.businessName} (${config.businessUrl}), an AI-accelerated web development studio.
 
@@ -83,14 +93,98 @@ function parseDraft(text) {
   return { subject: subjectMatch[1].trim(), body: bodyMatch[1].trim() };
 }
 
-/** Scans prior sends' Gmail threads for an unsubscribe-style reply and permanently suppresses that lead. */
-async function checkOptOuts() {
+function buildReplyPrompt({ name, replyText, slotText }) {
+  return `You are ${config.ownerName} from ${config.businessName}, replying to "${name}", a local business owner who just replied to your cold outreach email. Their reply:
+"""
+${replyText}
+"""
+
+Write a brief, warm, professional reply (under 120 words) that:
+- Directly acknowledges what they said
+- Confirms a quick call ${slotText ? `for ${slotText}` : "and asks what day/time works for them"}
+${slotText ? "- Mentions they'll get a calendar invite for that time, and can just reply if it doesn't work" : ""}
+- Signs off as ${config.ownerName}, ${config.businessName}
+
+Respond with EXACTLY this format, nothing else:
+SUBJECT: <subject line>
+BODY:
+<email body text>`;
+}
+
+/**
+ * Drafts and sends an automatic reply to a lead who responded to outreach,
+ * and — if OWNER_TIMEZONE is configured — books a real slot on the owner's
+ * Google Calendar and sends a real invite. Falls back to asking the lead to
+ * propose a time if calendar booking isn't available/fails, rather than
+ * blocking the reply entirely. Returns true if a meeting was booked.
+ */
+async function respondAndBook({ issue, name, threadId, replyEmail, replyText }) {
+  let slot = null;
+  if (requireFields(config, ["ownerTimezone"], `outreach (booking #${issue.number})`)) {
+    try {
+      slot = await findNextAvailableSlot({ timeZone: config.ownerTimezone });
+    } catch (err) {
+      console.error(`[outreach] could not find a calendar slot for #${issue.number}: ${err.message}`);
+    }
+  }
+  const slotText = slot ? formatSlot(slot) : null;
+
+  try {
+    const raw = await askClaude(buildReplyPrompt({ name, replyText, slotText }));
+    const parsed = parseDraft(raw);
+    if (!parsed) {
+      console.error(`[outreach] could not parse reply draft for #${issue.number}`);
+      return false;
+    }
+
+    if (slot) {
+      await createCalendarEvent({
+        summary: `${config.businessName} <> ${name}`,
+        description: `Quick call booked automatically after ${name} replied to outreach.\n\n${issue.html_url}`,
+        start: slot.start,
+        end: slot.end,
+        timeZone: slot.timeZone,
+        attendeeEmail: replyEmail,
+      });
+    }
+
+    const result = await sendEmail({ to: replyEmail, subject: parsed.subject, body: parsed.body, threadId });
+
+    if (slot) {
+      await setIssueLabels(
+        issue.number,
+        issue.labels.map((l) => l.name).map((l) => (l === "status:contacted" ? "status:meeting-booked" : l))
+      );
+    }
+    await addIssueComment(
+      issue.number,
+      `${slot ? `**Meeting booked automatically** for ${slotText} — calendar invite sent to ${replyEmail}.` : "**Auto-reply sent** (no meeting booked — set `OWNER_TIMEZONE` to enable automatic booking)."}\n\n**Reply sent:**\n\n${parsed.body}${embedThreadId(result.threadId)}`
+    );
+    console.log(`[outreach] ${slot ? `booked meeting for #${issue.number} (${name}) at ${slotText}` : `auto-replied to #${issue.number} (${name}), no booking`}`);
+    return Boolean(slot);
+  } catch (err) {
+    console.error(`[outreach] auto-reply/booking failed for #${issue.number}: ${err.message}`);
+    await addIssueComment(issue.number, `Reply received (posted above) but the automatic response failed (${err.message}) — needs a manual follow-up.`).catch(() => {});
+    return false;
+  }
+}
+
+/**
+ * Scans prior sends' Gmail threads for new replies. An unsubscribe-style
+ * reply permanently suppresses the lead (do-not-contact). Any other reply
+ * gets posted to the issue in full (visible on the dashboard) and triggers
+ * an automatic response + meeting booking via respondAndBook(). Once a
+ * lead reaches status:meeting-booked it's excluded here, so each thread is
+ * only auto-replied-to once — there's no reschedule/multi-turn handling yet.
+ */
+async function checkReplies() {
   const contacted = await listIssuesByLabel("status:contacted").catch(() => []);
   const leads = contacted.filter(
     (i) => i.labels.some((l) => l.name === "lead") && !i.labels.some((l) => l.name === "do-not-contact")
   );
 
   let suppressed = 0;
+  let booked = 0;
   for (const issue of leads) {
     const comments = await listIssueComments(issue.number).catch(() => []);
     let threadId = null;
@@ -99,21 +193,37 @@ async function checkOptOuts() {
       if (id) threadId = id; // last embedded thread id wins, in case of repeat contact
     }
     if (!threadId) continue;
+
     try {
       const messages = await getThread(threadId);
-      const replies = messages.slice(1); // first message is our own outgoing email
-      const optOut = replies.find((m) => OPT_OUT_RE.test(m.body) || OPT_OUT_RE.test(m.snippet));
-      if (!optOut) continue;
+      const ourAddress = (config.senderEmail || config.ownerEmail || "").toLowerCase();
+      const replies = messages.slice(1).filter((m) => extractEmailAddress(m.from).toLowerCase() !== ourAddress);
+      if (!replies.length) continue;
 
-      await setIssueLabels(issue.number, [...issue.labels.map((l) => l.name), "do-not-contact"]);
-      await addIssueComment(issue.number, "**Unsubscribe reply detected** — marked do-not-contact, this lead will not be emailed again.");
-      suppressed++;
-      console.log(`[outreach] suppressed #${issue.number} — unsubscribe reply`);
+      const optOut = replies.find((m) => OPT_OUT_RE.test(m.body) || OPT_OUT_RE.test(m.snippet));
+      if (optOut) {
+        await setIssueLabels(issue.number, [...issue.labels.map((l) => l.name), "do-not-contact"]);
+        await addIssueComment(issue.number, "**Unsubscribe reply detected** — marked do-not-contact, this lead will not be emailed again.");
+        suppressed++;
+        console.log(`[outreach] suppressed #${issue.number} — unsubscribe reply`);
+        continue;
+      }
+
+      const latest = replies[replies.length - 1];
+      const replyEmail = extractEmailAddress(latest.from);
+      const name = extractField(issue.body, "Business") || issue.title;
+      await addIssueComment(
+        issue.number,
+        `**Reply received** from ${latest.from}:\n\n> ${latest.body.trim().split("\n").join("\n> ")}`
+      );
+
+      if (await respondAndBook({ issue, name, threadId, replyEmail, replyText: latest.body.trim() })) booked++;
     } catch (err) {
-      console.error(`[outreach] opt-out check failed for #${issue.number}: ${err.message}`);
+      console.error(`[outreach] reply check failed for #${issue.number}: ${err.message}`);
     }
   }
   if (suppressed) console.log(`[outreach] ${suppressed} lead(s) suppressed this run`);
+  if (booked) console.log(`[outreach] ${booked} meeting(s) booked this run`);
 }
 
 async function run() {
@@ -133,8 +243,8 @@ async function run() {
     );
   }
 
-  await ensureLabelsExist(["status:contacted", "do-not-contact"]);
-  await checkOptOuts();
+  await ensureLabelsExist(["status:contacted", "do-not-contact", "status:meeting-booked"]);
+  await checkReplies();
 
   const issues = await listIssuesByLabel("status:new");
   const leadIssues = issues.filter((i) => i.labels.some((l) => l.name === "lead"));

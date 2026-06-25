@@ -11,8 +11,11 @@ import { createServer } from "node:http";
 
 const PORT = 53682;
 const REDIRECT_URI = `http://localhost:${PORT}`;
-// compose+send to actually send outreach, readonly so outreach can detect unsubscribe replies
-const SCOPE = "https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.readonly";
+// compose+send to actually send outreach, readonly so outreach can detect
+// replies/unsubscribes, calendar.events so it can book a real meeting +
+// send a calendar invite when a lead replies.
+const SCOPE =
+  "https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.events";
 
 const clientId = process.env.GMAIL_CLIENT_ID;
 const clientSecret = process.env.GMAIL_CLIENT_SECRET;
@@ -66,7 +69,7 @@ const server = createServer(async (req, res) => {
       process.exit(1);
     }
     console.log(
-      "\nIf you already had a GMAIL_REFRESH_TOKEN from before outreach sent for real, it was issued with only the compose scope — replace it with this new one so unsubscribe-detection works too.\n"
+      "\nIf you already had a GMAIL_REFRESH_TOKEN from before, it may have been issued with fewer scopes (e.g. only compose, or compose+readonly) — replace it with this new one so reply-detection and automatic meeting booking both work.\n"
     );
     console.log("Success! Save this as the GMAIL_REFRESH_TOKEN GitHub secret:\n");
     console.log(data.refresh_token);

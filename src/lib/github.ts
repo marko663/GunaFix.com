@@ -75,6 +75,18 @@ export async function addIssueComment(issueNumber: number, body: string) {
   });
 }
 
+export type GithubIssueComment = {
+  id: number;
+  body: string;
+  created_at: string;
+  user: { login: string; type: string } | null;
+};
+
+/** Full comment history for an issue — used to surface lead replies (and auto-booked meeting confirmations) on the dashboard. */
+export async function listIssueComments(issueNumber: number): Promise<GithubIssueComment[]> {
+  return ghFetch(`/issues/${issueNumber}/comments?per_page=100`);
+}
+
 export async function setIssueLabels(issueNumber: number, labels: string[]) {
   return ghFetch(`/issues/${issueNumber}/labels`, {
     method: "PUT",

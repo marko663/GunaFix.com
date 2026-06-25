@@ -6,7 +6,7 @@
 
 import http from "node:http";
 import { config, requireFields } from "../config.mjs";
-import { listAllOpenIssues, setIssueLabels, closeIssue, addIssueComment } from "../lib/github.mjs";
+import { listAllOpenIssues, setIssueLabels, closeIssue, addIssueComment, listIssueComments } from "../lib/github.mjs";
 
 const PORT = Number(process.env.DASHBOARD_PORT || 4040);
 
@@ -48,7 +48,23 @@ function actionForm(issue, fields, text) {
   </form>`;
 }
 
-function renderIssue(issue) {
+function renderActivity(comments) {
+  if (!comments || comments.length === 0) return "";
+  const recent = [...comments].reverse().slice(0, 5);
+  return `<div class="activity">
+    <p class="activity-label">Activity (replies, sends, bookings)</p>
+    ${recent
+      .map(
+        (c) => `<div class="comment">
+      <p class="comment-meta">${escapeHtml(c.user?.login || "Unknown")} · ${new Date(c.created_at).toLocaleString()}</p>
+      <pre class="comment-body">${escapeHtml(c.body || "")}</pre>
+    </div>`
+      )
+      .join("")}
+  </div>`;
+}
+
+function renderIssue(issue, comments) {
   const labels = labelNames(issue);
   const chips = labels.map((l) => `<span class="chip">${escapeHtml(l)}</span>`).join(" ");
 
@@ -77,19 +93,36 @@ function renderIssue(issue) {
     </div>
     <div class="chips">${chips}</div>
     <pre class="body">${escapeHtml(issue.body || "")}</pre>
+    ${renderActivity(comments)}
   </div>`;
 }
 
-function renderSection(title, issues) {
+function renderSection(title, issues, commentsByIssue) {
   if (issues.length === 0) {
     return `<section><h2>${title} (0)</h2><p class="empty">Nothing here.</p></section>`;
   }
-  return `<section><h2>${title} (${issues.length})</h2>${issues.map(renderIssue).join("")}</section>`;
+  return `<section><h2>${title} (${issues.length})</h2>${issues
+    .map((issue) => renderIssue(issue, commentsByIssue?.get(issue.number)))
+    .join("")}</section>`;
 }
 
 async function renderPage() {
   const issues = await listAllOpenIssues();
   const groups = categorize(issues);
+
+  const repliableLeadNumbers = groups.leads
+    .filter((i) => labelNames(i).some((l) => l === "status:contacted" || l === "status:meeting-booked"))
+    .map((i) => i.number);
+  const commentsByIssue = new Map();
+  try {
+    const results = await Promise.all(
+      repliableLeadNumbers.map(async (number) => [number, await listIssueComments(number)])
+    );
+    for (const [number, comments] of results) commentsByIssue.set(number, comments);
+  } catch {
+    // best-effort — the board still renders without reply/activity history
+  }
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -108,6 +141,11 @@ async function renderPage() {
   .chips { margin-top: 6px; }
   .chip { display: inline-block; background: #f1f1f1; border-radius: 12px; padding: 2px 10px; font-size: 12px; margin-right: 4px; color: #444; }
   .body { white-space: pre-wrap; font-family: inherit; font-size: 14px; color: #333; margin-top: 8px; max-height: 200px; overflow-y: auto; }
+  .activity { margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; }
+  .activity-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #999; margin: 0 0 6px; }
+  .comment { background: #f7f7f7; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; max-height: 160px; overflow-y: auto; }
+  .comment-meta { font-size: 11px; color: #999; margin: 0 0 4px; }
+  .comment-body { white-space: pre-wrap; font-family: inherit; font-size: 13px; color: #333; margin: 0; }
   .empty { color: #999; font-style: italic; }
   .inline-form { display: inline; margin: 0; }
   button { border: 1px solid #ccc; background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 13px; }
@@ -123,7 +161,7 @@ async function renderPage() {
   ${groups.permissions.length ? `<p class="sub">Approve/Deny posts your reply — the agents apply it on their next run (every 6h, or trigger <code>workflow_dispatch</code> on the Growth Agents workflow for an immediate check).</p>` : ""}
   ${renderSection("Needs your decision", groups.permissions)}
   ${renderSection("Urgent", groups.urgent)}
-  ${renderSection("Leads", groups.leads)}
+  ${renderSection("Leads", groups.leads, commentsByIssue)}
   ${renderSection("Social content", groups.social)}
   ${renderSection("Search & traffic digests", groups.search)}
   ${renderSection("Leader run log", groups.leaderReports)}

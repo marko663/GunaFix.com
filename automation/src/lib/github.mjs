@@ -119,6 +119,7 @@ export async function ensureLabelsExist(labels) {
     "do-not-contact": "1d1d1d",
     "contact:guessed": "c5def5",
     "outreach-counter": "5319e7",
+    "status:meeting-booked": "0e8a16",
   };
   for (const name of labels) {
     try {

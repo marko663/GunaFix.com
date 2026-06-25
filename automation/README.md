@@ -26,7 +26,7 @@ running yourself.
 | Agent | File | Does | Can contact you directly? |
 |---|---|---|---|
 | Lead Finder | `src/agents/leadFinder.mjs` | Searches local businesses (Google Places), audits their site, opens a GitHub Issue per qualifying lead | No |
-| Outreach | `src/agents/outreach.mjs` | Drafts a personalized cold email per lead with Claude and **sends it for real**, immediately, from your own Gmail account. Detects "unsubscribe" replies and permanently suppresses that lead | No — it emails *leads*, not you; see below |
+| Outreach | `src/agents/outreach.mjs` | Drafts a personalized cold email per lead with Claude and **sends it for real**, immediately, from your own Gmail account. Watches each sent thread for replies: posts the full reply text to the issue, auto-drafts and sends a response, and books a real slot on your Google Calendar (if `OWNER_TIMEZONE` is set). Detects "unsubscribe" replies and permanently suppresses that lead | No — it emails *leads*, not you; see below |
 | Social Content | `src/agents/socialContent.mjs` | Writes a short video script + IG/TikTok/Facebook captions, files it as an Issue to film, and asks permission to auto-post the FB caption | No — posts only after you say yes |
 | Search & Traffic | `src/agents/searchTraffic.mjs` | Posts a GA4 + Google Search Console digest and flags the issue `urgent` on anomalies (traffic cliffs, organic click drops, ranking slides) | No |
 | **Leader** | `src/agents/leader.mjs` | Rolls up the run, emails you immediately on anything `urgent` (including permission requests from the agents above), posts a run log, acknowledges any other reply you leave on an urgent issue | **Yes — the only one** |
@@ -46,9 +46,38 @@ sending real and high-volume, it no longer does — see below.
 Anything else labeled `urgent` that isn't a structured permission request (e.g. a traffic-cliff anomaly with no proposed fix) — replying on that issue just gets you an acknowledgment from the Leader; there's no free-form instruction parser yet.
 
 Leads live as GitHub Issues (labels: `lead`, `status:new` →
-`status:needs-contact-info` / `status:contacted`, plus `do-not-contact` once
-a lead unsubscribes, and `contact:guessed` on leads where no real email was
-found on their site — see below) — a free CRM with no database to run.
+`status:needs-contact-info` / `status:contacted` → `status:meeting-booked`
+once a reply gets auto-booked, plus `do-not-contact` once a lead
+unsubscribes, and `contact:guessed` on leads where no real email was found
+on their site — see below) — a free CRM with no database to run.
+
+## Automatic reply handling + meeting booking
+
+Every outreach run also re-checks every `status:contacted` lead's Gmail
+thread for a reply (`checkReplies()` in `outreach.mjs`):
+
+- **Any reply** (other than an unsubscribe) gets posted to the issue in
+  full — visible on both dashboards under "Activity (replies, sends,
+  bookings)" — then Claude drafts a short, warm response and it's sent for
+  real, in the same thread, with no review step (`respondAndBook()`).
+- **If `OWNER_TIMEZONE` is set**, that response also books a real meeting:
+  `src/lib/calendar.mjs` queries your Google Calendar's free/busy via the
+  same Gmail OAuth token (it needs the `calendar.events` scope too — see
+  step 4 below), walks forward in 30-minute slots up to 14 days out
+  skipping weekends and anything outside 9am–5pm in your timezone, picks
+  the first open one, and creates a real Calendar event with the lead as an
+  attendee (so they get a real invite). The issue moves to
+  `status:meeting-booked` and the comment says exactly when.
+- **If `OWNER_TIMEZONE` isn't set**, or no slot/booking attempt fails, the
+  reply still goes out — it just asks the lead to propose a time instead of
+  booking one automatically.
+- **Unsubscribe-style replies** still short-circuit all of this: the lead is
+  marked `do-not-contact` and nothing is sent back.
+
+This only catches replies in the *same thread* as a prior send, and only
+once per lead — there's no reschedule/multi-turn conversation handling yet,
+so a second reply on an already-`status:meeting-booked` thread won't get an
+automatic response.
 
 ## Real sending — what this means for your Gmail account
 
@@ -143,9 +172,10 @@ turn pieces on one at a time. Add these as **GitHub Actions secrets**
   target" below for how Lead Finder uses this to pace its own search
   aggressiveness against outreach's actual send rate.
 
-### 4. Gmail API (real outreach sends + leader's urgent emails)
+### 4. Gmail API (real outreach sends + leader's urgent emails + reply auto-booking)
 1. In Google Cloud Console, create an OAuth client of type **Desktop app**
-   and enable the **Gmail API**.
+   and enable the **Gmail API** and the **Google Calendar API** (the same
+   account's primary calendar is used for auto-booking).
 2. Locally (not in CI):
    ```bash
    cd automation
@@ -155,15 +185,20 @@ turn pieces on one at a time. Add these as **GitHub Actions secrets**
    to send from** (the `From:` header is whatever `SENDER_EMAIL`/`OWNER_EMAIL`
    is set to, but Gmail will only actually send as an address this account is
    authorized for — they need to match), approve access. The requested
-   scope covers both sending and reading replies (needed for unsubscribe
-   detection).
-4. The script prints a refresh token — save it. If you set this up before
-   outreach sent for real, your old token only has the compose scope —
-   re-run the script and replace it.
+   scope covers sending, reading replies (unsubscribe detection), and
+   `calendar.events` (auto-booking a meeting on reply).
+4. The script prints a refresh token — save it. **If you already had a
+   GMAIL_REFRESH_TOKEN from before this feature**, it was issued with fewer
+   scopes (compose, or compose+readonly) — re-run the script and replace it,
+   or reply-detection/auto-booking won't work.
 5. Secrets: `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`.
    Variables: `SENDER_EMAIL` (defaults to `OWNER_EMAIL` if unset),
    `BUSINESS_PHYSICAL_ADDRESS` (required by US CAN-SPAM law for the
-   footer on every outreach email — see "Real sending" above).
+   footer on every outreach email — see "Real sending" above), and
+   `OWNER_TIMEZONE` (IANA tz, e.g. `America/New_York` — required for
+   automatic meeting booking on reply; see "Automatic reply handling +
+   meeting booking" above. Without it, outreach still auto-replies but asks
+   the lead to propose a time instead of booking one for them).
 
 ### 5. GA4 Data API (website traffic digest)
 1. In Google Cloud Console, create a service account, enable the

@@ -16,6 +16,9 @@ export const config = {
   ownerEmail: env("OWNER_EMAIL", "markoguna9@gmail.com"),
   senderEmail: env("SENDER_EMAIL"), // Gmail address outreach is sent from
   businessPhysicalAddress: env("BUSINESS_PHYSICAL_ADDRESS"), // CAN-SPAM: required postal address for commercial email footers
+  // IANA tz e.g. "America/New_York" — required for outreach to auto-book a
+  // meeting slot in business hours when a lead replies. No safe default.
+  ownerTimezone: env("OWNER_TIMEZONE"),
 
   // Anthropic (Claude) — used for drafting outreach copy, audit summaries, social captions
   anthropicApiKey: env("ANTHROPIC_API_KEY"),

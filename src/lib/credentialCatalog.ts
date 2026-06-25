@@ -28,7 +28,7 @@ export type CredentialDef = {
 export const CREDENTIAL_GROUPS: Record<CredentialGroup, string> = {
   anthropic: "Anthropic (outreach copy, scripts, audit summaries)",
   "google-places": "Google Places API (lead sourcing)",
-  gmail: "Gmail API (outreach drafts + urgent alerts)",
+  gmail: "Gmail API (outreach sends + urgent alerts + reply auto-booking)",
   ga4: "GA4 Data API (website traffic digest)",
   "search-console": "Google Search Console (organic search digest)",
   meta: "Meta Graph API (Facebook/Instagram)",
@@ -69,7 +69,7 @@ export const CREDENTIAL_CATALOG: CredentialDef[] = [
     kind: "secret",
     group: "gmail",
     label: "Gmail refresh token",
-    description: "Printed by automation/src/scripts/getGmailRefreshToken.mjs after a one-time local sign-in. Grants send + read access so outreach can send real emails and detect unsubscribe replies.",
+    description: "Printed by automation/src/scripts/getGmailRefreshToken.mjs after a one-time local sign-in. Grants send + read + calendar.events access so outreach can send real emails, detect replies/unsubscribes, and auto-book a meeting on reply.",
   },
   {
     name: "SENDER_EMAIL",
@@ -77,6 +77,13 @@ export const CREDENTIAL_CATALOG: CredentialDef[] = [
     group: "gmail",
     label: "Sender email",
     description: "The Gmail address drafts/alerts come from. Defaults to OWNER_EMAIL if unset.",
+  },
+  {
+    name: "OWNER_TIMEZONE",
+    kind: "variable",
+    group: "gmail",
+    label: "Owner timezone",
+    description: "IANA tz, e.g. America/New_York. Required for outreach to auto-book a meeting slot (9am-5pm business hours) on the owner's Google Calendar when a lead replies — without it, outreach still auto-replies but asks the lead to propose a time instead.",
   },
   {
     name: "GA4_PROPERTY_ID",
