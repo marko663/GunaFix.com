@@ -1,7 +1,9 @@
-// Gmail API client: creates outreach DRAFTS (never auto-sent — the owner
-// reviews and hits send themselves) and sends the leader's urgent alert
-// emails. OAuth2 user refresh-token flow; see scripts/getGmailRefreshToken.mjs
-// for the one-time setup to obtain GMAIL_REFRESH_TOKEN.
+// Gmail API client: sends outreach emails for real (directly from the
+// owner's own Gmail account — no draft/approval step) and the leader's
+// urgent alert emails. Also reads thread replies so outreach can detect
+// "unsubscribe"-style responses. OAuth2 user refresh-token flow; see
+// scripts/getGmailRefreshToken.mjs for the one-time setup to obtain
+// GMAIL_REFRESH_TOKEN (scope: gmail.compose + gmail.readonly).
 
 import { config } from "../config.mjs";
 import { getAccessTokenFromRefreshToken } from "./googleAuth.mjs";
@@ -46,27 +48,49 @@ async function gmailFetch(path, accessTok, opts = {}) {
     const text = await res.text().catch(() => "");
     throw new Error(`Gmail API error ${res.status} ${path}: ${text}`);
   }
-  return res.json();
+  return res.status === 204 ? null : res.json();
 }
 
-/** Creates a Gmail draft. Outreach is ALWAYS draft-only — the owner approves and sends manually. */
-export async function createDraft({ to, subject, body }) {
+/** Sends an email immediately. Used for real outreach sends and the leader's urgent alerts. Pass `threadId` to reply within an existing thread (e.g. an auto-reply to a lead). Returns {id, threadId, ...}. */
+export async function sendEmail({ to, subject, body, threadId }) {
   const tok = await accessToken();
   const from = config.senderEmail || config.ownerEmail;
   const raw = buildRawMessage({ from, to, subject, body });
-  return gmailFetch("/drafts", tok, {
-    method: "POST",
-    body: JSON.stringify({ message: { raw } }),
-  });
-}
-
-/** Sends an email immediately. Reserved for the leader's own urgent alerts to the owner — never used for outreach. */
-export async function sendEmail({ to, subject, body }) {
-  const tok = await accessToken();
-  const from = config.senderEmail || config.ownerEmail;
-  const raw = buildRawMessage({ from, to, subject, body });
+  const payload = threadId ? { raw, threadId } : { raw };
   return gmailFetch("/messages/send", tok, {
     method: "POST",
-    body: JSON.stringify({ raw }),
+    body: JSON.stringify(payload),
   });
+}
+
+function decodeBase64Url(data) {
+  return Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
+}
+
+/** Walks a Gmail message payload for the first text/plain part (falls back to text/html stripped of tags). */
+function extractPlainText(payload) {
+  if (!payload) return "";
+  if (payload.mimeType === "text/plain" && payload.body?.data) {
+    return decodeBase64Url(payload.body.data);
+  }
+  for (const part of payload.parts || []) {
+    const text = extractPlainText(part);
+    if (text) return text;
+  }
+  if (payload.mimeType === "text/html" && payload.body?.data) {
+    return decodeBase64Url(payload.body.data).replace(/<[^>]+>/g, " ");
+  }
+  return "";
+}
+
+/** Fetches a full thread (all messages) with decoded plain-text bodies, oldest first. Requires the gmail.readonly scope. */
+export async function getThread(threadId) {
+  const tok = await accessToken();
+  const thread = await gmailFetch(`/threads/${threadId}?format=full`, tok);
+  return (thread.messages || []).map((m) => ({
+    id: m.id,
+    from: (m.payload?.headers || []).find((h) => h.name === "From")?.value || "",
+    snippet: m.snippet || "",
+    body: extractPlainText(m.payload),
+  }));
 }

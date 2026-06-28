@@ -20,20 +20,23 @@ import {
   listIssueComments,
   ensureLabelsExist,
 } from "../lib/github.mjs";
+import { getTodayProgress } from "../lib/dailyPace.mjs";
 
 const RUN_LOG_TITLE = "[Leader] Run Log";
 
 async function gatherCounts() {
-  const [newLeads, needsInfo, drafted, socialNew] = await Promise.all([
+  const [newLeads, needsInfo, contacted, suppressed, socialNew] = await Promise.all([
     listIssuesByLabel("status:new").catch(() => []),
     listIssuesByLabel("status:needs-contact-info").catch(() => []),
-    listIssuesByLabel("status:drafted").catch(() => []),
+    listIssuesByLabel("status:contacted").catch(() => []),
+    listIssuesByLabel("do-not-contact").catch(() => []),
     listIssuesByLabel("social-content").catch(() => []),
   ]);
   return {
     newLeads: newLeads.filter((i) => i.labels.some((l) => l.name === "lead")).length,
     needsInfo: needsInfo.filter((i) => i.labels.some((l) => l.name === "lead")).length,
-    drafted: drafted.filter((i) => i.labels.some((l) => l.name === "lead")).length,
+    contacted: contacted.filter((i) => i.labels.some((l) => l.name === "lead")).length,
+    suppressed: suppressed.filter((i) => i.labels.some((l) => l.name === "lead")).length,
     socialNew: socialNew.length,
   };
 }
@@ -113,13 +116,15 @@ async function acknowledgeOwnerReplies() {
   return acknowledged;
 }
 
-async function postRunSummary({ counts, urgentHandled, acknowledged }) {
+async function postRunSummary({ counts, pace, urgentHandled, acknowledged }) {
   const body = [
     `Run at ${new Date().toISOString()}`,
     "",
-    `- New leads awaiting outreach draft: ${counts.newLeads}`,
+    `- Emails sent today: ${pace.sentToday} / ${pace.target} target`,
+    `- New leads awaiting outreach send: ${counts.newLeads}`,
     `- Leads still missing contact info: ${counts.needsInfo}`,
-    `- Outreach drafts created (lifetime, open): ${counts.drafted}`,
+    `- Leads emailed so far (lifetime, open): ${counts.contacted}`,
+    `- Leads that unsubscribed (do-not-contact): ${counts.suppressed}`,
     `- Open social content pieces ready to film: ${counts.socialNew}`,
     `- Urgent items alerted this run: ${urgentHandled.length}`,
     `- Owner replies acknowledged this run: ${acknowledged.length}`,
@@ -140,9 +145,10 @@ async function run() {
   await ensureLabelsExist(["leader-notified", "leader-report", "urgent", "leader-acknowledged"]);
 
   const counts = await gatherCounts();
+  const pace = await getTodayProgress().catch(() => ({ sentToday: 0, target: config.dailyEmailTarget }));
   const urgentHandled = await handleUrgentItems();
   const acknowledged = await acknowledgeOwnerReplies();
-  await postRunSummary({ counts, urgentHandled, acknowledged });
+  await postRunSummary({ counts, pace, urgentHandled, acknowledged });
 }
 
 run().catch((err) => {

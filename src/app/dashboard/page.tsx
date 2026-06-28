@@ -17,7 +17,9 @@ import {
   listActionsSecretNames,
   listActionsVariables,
   listAllOpenIssues,
+  listIssueComments,
   type GithubIssue,
+  type GithubIssueComment,
   type GithubWorkflowJob,
   type GithubWorkflowRun,
 } from "@/lib/github";
@@ -70,7 +72,29 @@ function categorize(issues: GithubIssue[]) {
   return groups;
 }
 
-function IssueCard({ issue }: { issue: GithubIssue }) {
+function ActivityBlock({ comments }: { comments: GithubIssueComment[] }) {
+  if (comments.length === 0) return null;
+  const recent = [...comments].reverse().slice(0, 5);
+  return (
+    <div className="space-y-2 border-t border-white/10 pt-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-white/40">
+        Activity (replies, sends, bookings)
+      </p>
+      <div className="max-h-64 space-y-2 overflow-y-auto">
+        {recent.map((c) => (
+          <div key={c.id} className="rounded-md bg-white/5 px-3 py-2">
+            <p className="mb-1 text-xs text-white/40">
+              {c.user?.login ?? "Unknown"} · {new Date(c.created_at).toLocaleString()}
+            </p>
+            <pre className="whitespace-pre-wrap font-sans text-sm text-white/70">{c.body}</pre>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IssueCard({ issue, comments }: { issue: GithubIssue; comments?: GithubIssueComment[] }) {
   const labels = labelNames(issue);
 
   return (
@@ -100,6 +124,8 @@ function IssueCard({ issue }: { issue: GithubIssue }) {
             {issue.body}
           </pre>
         ) : null}
+
+        {comments ? <ActivityBlock comments={comments} /> : null}
 
         <div className="flex flex-wrap gap-2">
           {labels.includes("awaiting-permission") ? (
@@ -147,7 +173,15 @@ function IssueCard({ issue }: { issue: GithubIssue }) {
   );
 }
 
-function Section({ title, issues }: { title: string; issues: GithubIssue[] }) {
+function Section({
+  title,
+  issues,
+  commentsByIssue,
+}: {
+  title: string;
+  issues: GithubIssue[];
+  commentsByIssue?: Map<number, GithubIssueComment[]>;
+}) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-white">
@@ -158,7 +192,7 @@ function Section({ title, issues }: { title: string; issues: GithubIssue[] }) {
       ) : (
         <div className="space-y-4">
           {issues.map((issue) => (
-            <IssueCard key={issue.number} issue={issue} />
+            <IssueCard key={issue.number} issue={issue} comments={commentsByIssue?.get(issue.number)} />
           ))}
         </div>
       )}
@@ -390,6 +424,22 @@ export default async function DashboardPage({
   }
   const groups = categorize(issues);
 
+  // Only leads that have actually been emailed can have a reply worth showing —
+  // fetching comments for every open issue would be a lot of extra GitHub calls
+  // for no benefit on fresh, not-yet-contacted leads.
+  const repliableLeadNumbers = groups.leads
+    .filter((i) => labelNames(i).some((l) => l === "status:contacted" || l === "status:meeting-booked"))
+    .map((i) => i.number);
+  let commentsByIssue = new Map<number, GithubIssueComment[]>();
+  try {
+    const results = await Promise.all(
+      repliableLeadNumbers.map(async (number) => [number, await listIssueComments(number)] as const),
+    );
+    commentsByIssue = new Map(results);
+  } catch {
+    // best-effort — the board still renders without reply/activity history
+  }
+
   let agentRunData: { run: GithubWorkflowRun; jobs: GithubWorkflowJob[] } | null = null;
   let agentStatusError: string | null = null;
   try {
@@ -449,7 +499,7 @@ export default async function DashboardPage({
         ) : null}
         <Section title="Needs your decision" issues={groups.permissions} />
         <Section title="Urgent" issues={groups.urgent} />
-        <Section title="Leads" issues={groups.leads} />
+        <Section title="Leads" issues={groups.leads} commentsByIssue={commentsByIssue} />
         <Section title="Social content" issues={groups.social} />
         <Section title="Search & traffic digests" issues={groups.search} />
         <Section title="Leader run log" issues={groups.leaderReports} />

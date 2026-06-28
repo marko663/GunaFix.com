@@ -14,7 +14,11 @@ export const config = {
   businessUrl: env("BUSINESS_URL", "https://gunafix.com"),
   ownerName: env("OWNER_NAME", "Marko"),
   ownerEmail: env("OWNER_EMAIL", "markoguna9@gmail.com"),
-  senderEmail: env("SENDER_EMAIL"), // Gmail address outreach drafts/sends are created from
+  senderEmail: env("SENDER_EMAIL"), // Gmail address outreach is sent from
+  businessPhysicalAddress: env("BUSINESS_PHYSICAL_ADDRESS"), // CAN-SPAM: required postal address for commercial email footers
+  // IANA tz e.g. "America/New_York" — required for outreach to auto-book a
+  // meeting slot in business hours when a lead replies. No safe default.
+  ownerTimezone: env("OWNER_TIMEZONE"),
 
   // Anthropic (Claude) — used for drafting outreach copy, audit summaries, social captions
   anthropicApiKey: env("ANTHROPIC_API_KEY"),
@@ -49,7 +53,7 @@ export const config = {
   metaIgUserId: env("META_IG_USER_ID"),
   metaGraphApiVersion: env("META_GRAPH_API_VERSION", "v21.0"),
 
-  // Lead sourcing defaults — broad/general per owner's explicit choice
+  // Lead sourcing defaults — broad/general, worldwide, per owner's explicit choice
   leadCategories: env(
     "LEAD_CATEGORIES",
     "plumber,electrician,dentist,lawyer,roofing contractor,hair salon,restaurant,auto repair shop,real estate agency,accounting firm,landscaping company,chiropractor,veterinarian,hvac contractor,bakery"
@@ -59,12 +63,18 @@ export const config = {
     .filter(Boolean),
   leadRegions: env(
     "LEAD_REGIONS",
-    "Chicago IL,Houston TX,Phoenix AZ,Philadelphia PA,San Antonio TX,Columbus OH,Charlotte NC,Indianapolis IN,Denver CO,Nashville TN"
+    "New York NY,London United Kingdom,Berlin Germany,Toronto Canada,Sydney Australia,Dubai UAE,Singapore,Mumbai India,Sao Paulo Brazil,Tokyo Japan"
   )
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
-  leadsPerRun: Number(env("LEADS_PER_RUN", "15")),
+  leadsPerRun: Number(env("LEADS_PER_RUN", "20")),
+  // How many distinct category+region searches leadFinder runs per invocation —
+  // the main lever for daily lead volume (each search costs a Places API call).
+  leadSearchesPerRun: Number(env("LEAD_SEARCHES_PER_RUN", "8")),
+  // Target emails/day outreach aims for. Not a hard cap — lead-finder reads
+  // progress against this each run and searches harder when behind pace.
+  dailyEmailTarget: Number(env("DAILY_EMAIL_TARGET", "200")),
 };
 
 export function requireFields(obj, fields, label) {
