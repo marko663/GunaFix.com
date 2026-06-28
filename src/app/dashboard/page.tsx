@@ -23,6 +23,7 @@ import {
   type GithubWorkflowJob,
   type GithubWorkflowRun,
 } from "@/lib/github";
+import { getInstagramOverview, isMetaConfigured, type InstagramOverview } from "@/lib/meta";
 import {
   closeIssueAction,
   decideAction,
@@ -270,6 +271,103 @@ function AgentStatusSection({
   );
 }
 
+function Stat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+      <p className="text-lg font-semibold text-white">{value}</p>
+      <p className="text-xs text-white/40">{label}</p>
+    </div>
+  );
+}
+
+function InstagramSection({
+  configured,
+  overview,
+  error,
+}: {
+  configured: boolean;
+  overview: InstagramOverview | null;
+  error: string | null;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Instagram</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!configured ? (
+          <p className="text-sm text-white/60">
+            Set <code className="text-emerald-300">META_PAGE_ACCESS_TOKEN</code> and{" "}
+            <code className="text-emerald-300">META_IG_USER_ID</code> as website env vars to show
+            follower and engagement data here.
+          </p>
+        ) : error ? (
+          <p className="text-sm text-amber-300/80">Couldn&apos;t load Instagram data: {error}</p>
+        ) : overview ? (
+          <>
+            <div className="flex flex-wrap items-center gap-4">
+              {overview.profile.profilePictureUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={overview.profile.profilePictureUrl}
+                  alt={overview.profile.username}
+                  className="h-14 w-14 rounded-full border border-white/10"
+                />
+              ) : null}
+              <div>
+                <p className="font-medium text-white">@{overview.profile.username}</p>
+                {overview.profile.name ? (
+                  <p className="text-sm text-white/50">{overview.profile.name}</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Stat label="Followers" value={overview.profile.followersCount} />
+              <Stat label="Following" value={overview.profile.followsCount ?? "—"} />
+              <Stat label="Posts" value={overview.profile.mediaCount} />
+              <Stat label="Avg likes + comments / post" value={overview.totals.avgLikes + overview.totals.avgComments} />
+            </div>
+
+            {overview.media.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-white/40">
+                  Recent posts
+                </p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {overview.media.map((m) => (
+                    <a
+                      key={m.id}
+                      href={m.permalink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative block overflow-hidden rounded-lg border border-white/10"
+                    >
+                      {m.thumbnailUrl || m.mediaUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={m.thumbnailUrl ?? m.mediaUrl ?? ""}
+                          alt={m.caption ?? "Instagram post"}
+                          className="aspect-square w-full object-cover"
+                        />
+                      ) : (
+                        <div className="aspect-square w-full bg-white/5" />
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-black/70 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100">
+                        {m.likeCount} likes · {m.commentsCount} comments
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 function CredentialsChecklist({
   secretNames,
   variables,
@@ -457,6 +555,17 @@ export default async function DashboardPage({
     credentialsError = error instanceof Error ? error.message : "Unknown error.";
   }
 
+  const metaConfigured = isMetaConfigured();
+  let instagramOverview: InstagramOverview | null = null;
+  let instagramError: string | null = null;
+  if (metaConfigured) {
+    try {
+      instagramOverview = await getInstagramOverview();
+    } catch (error) {
+      instagramError = error instanceof Error ? error.message : "Unknown error.";
+    }
+  }
+
   return (
     <Shell>
       <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
@@ -478,6 +587,14 @@ export default async function DashboardPage({
 
       <div className="mb-12">
         <AgentStatusSection data={agentRunData} error={agentStatusError} />
+      </div>
+
+      <div className="mb-12">
+        <InstagramSection
+          configured={metaConfigured}
+          overview={instagramOverview}
+          error={instagramError}
+        />
       </div>
 
       <div className="mb-12 grid gap-6 lg:grid-cols-2">
