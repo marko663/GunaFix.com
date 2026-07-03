@@ -14,7 +14,8 @@
     "search-traffic": "node src/agents/searchTraffic.mjs",
     "leader": "node src/agents/leader.mjs",
     "gmail-token": "node src/scripts/getGmailRefreshToken.mjs",
-    "dashboard": "node src/dashboard/server.mjs"
+    "dashboard": "node src/dashboard/server.mjs",
+    "start": "node src/dashboard/server.mjs"
   },
   "dependencies": {}
 }
