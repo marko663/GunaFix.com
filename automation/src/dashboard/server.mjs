@@ -368,6 +368,17 @@ function renderHtml() {
   #chat-input:focus { border-color: var(--accent); }
   #send-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-size: 14px; }
   #voice-status { font-size: 12px; color: var(--muted); width: 100%; }
+  #voice-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 6px 10px; font-size: 13px; margin-top: 10px; width: 100%; outline: none; }
+  #voice-select:focus { border-color: var(--accent); }
+  .speaking-wave { display: none; align-items: center; gap: 3px; height: 20px; }
+  .speaking-wave.active { display: flex; }
+  .speaking-wave span { display: block; width: 3px; border-radius: 2px; background: var(--accent2); animation: wave 0.8s ease-in-out infinite; }
+  .speaking-wave span:nth-child(1) { height: 6px; animation-delay: 0s; }
+  .speaking-wave span:nth-child(2) { height: 14px; animation-delay: .1s; }
+  .speaking-wave span:nth-child(3) { height: 10px; animation-delay: .2s; }
+  .speaking-wave span:nth-child(4) { height: 18px; animation-delay: .15s; }
+  .speaking-wave span:nth-child(5) { height: 8px; animation-delay: .05s; }
+  @keyframes wave { 0%,100% { transform: scaleY(0.4); } 50% { transform: scaleY(1); } }
 
   /* credentials */
   .cred-form { max-width: 640px; }
@@ -443,11 +454,15 @@ function renderHtml() {
   <div class="voice-area">
     <div id="chat-log"></div>
     <div class="voice-controls">
-      <button id="mic-btn" title="Hold to speak or click to toggle">🎤</button>
+      <button id="mic-btn" title="Click to speak">🎤</button>
       <input id="chat-input" type="text" placeholder="Or type a message…" />
       <button id="send-btn">Send</button>
+      <div class="speaking-wave" id="speaking-wave">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
     </div>
     <div id="voice-status">Click the mic to start speaking</div>
+    <select id="voice-select"><option value="">Loading voices…</option></select>
   </div>
 </div>
 
@@ -815,27 +830,89 @@ async function sendMessage(text) {
   }
 }
 
+// ─── voice selection ──────────────────────────────────────────────────────────
+// Priority list: prefer natural female voices, then any Google voice, then any
+const VOICE_PRIORITY = [
+  /Google UK English Female/i,
+  /Samantha/i,
+  /Karen/i,
+  /Moira/i,
+  /Google US English/i,
+  /Google/i,
+  /Microsoft.*Natural/i,
+  /Microsoft Aria/i,
+];
+
+let selectedVoiceName = localStorage.getItem('claudeVoice') || '';
+
+function pickBestVoice(voices) {
+  // if user picked one, honour it
+  if (selectedVoiceName) {
+    const found = voices.find(v => v.name === selectedVoiceName);
+    if (found) return found;
+  }
+  // else walk priority list
+  for (const pattern of VOICE_PRIORITY) {
+    const found = voices.find(v => pattern.test(v.name));
+    if (found) return found;
+  }
+  // fallback: first English voice
+  return voices.find(v => /en/i.test(v.lang)) || voices[0] || null;
+}
+
+function populateVoiceSelect() {
+  if (!window.speechSynthesis) return;
+  const voices = window.speechSynthesis.getVoices().filter(v => /en/i.test(v.lang));
+  const sel = document.getElementById('voice-select');
+  if (!voices.length) return;
+  const best = pickBestVoice(voices);
+  sel.innerHTML = voices.map(v =>
+    \`<option value="\${v.name}" \${v === best ? 'selected' : ''}>\${v.name} (\${v.lang})</option>\`
+  ).join('');
+  if (!selectedVoiceName && best) selectedVoiceName = best.name;
+}
+
+document.getElementById('voice-select').addEventListener('change', (e) => {
+  selectedVoiceName = e.target.value;
+  localStorage.setItem('claudeVoice', selectedVoiceName);
+  // preview the chosen voice
+  speakText('Hello Marko, this is how I sound.');
+});
+
+window.speechSynthesis && window.speechSynthesis.addEventListener('voiceschanged', populateVoiceSelect);
+// Chrome loads voices async; trigger once immediately too
+populateVoiceSelect();
+
 function speakText(text) {
   if (!window.speechSynthesis || !text) return;
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   utt.rate = 1.05;
-  utt.pitch = 1;
-  // prefer a natural voice
+  utt.pitch = 0.95;   // slightly lower = more authoritative / Claude-like
+  utt.volume = 1;
   const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(v => /Google|Samantha|Alex|Karen/i.test(v.name));
-  if (preferred) utt.voice = preferred;
+  const voice = pickBestVoice(voices);
+  if (voice) utt.voice = voice;
   speaking = true;
-  utt.onend = () => { speaking = false; };
+  const wave = document.getElementById('speaking-wave');
+  if (wave) wave.classList.add('active');
+  utt.onend = () => {
+    speaking = false;
+    if (wave) wave.classList.remove('active');
+  };
+  utt.onerror = () => {
+    speaking = false;
+    if (wave) wave.classList.remove('active');
+  };
   window.speechSynthesis.speak(utt);
 }
 
-// auto-load voices
-window.speechSynthesis && window.speechSynthesis.addEventListener('voiceschanged', () => {});
-
 // ─── greeting on load ─────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  addChatMsg('ai', 'Hello Marko! I\\'m your GunaFix Agent Hub. I can run your growth agents, show you activity, and answer questions. Click the mic or type a message to get started.');
+  const greeting = "Hello Marko! I'm your GunaFix Agent Hub. I can run your growth agents, report on leads and emails, and answer any questions. Click the mic to talk to me, or type below.";
+  addChatMsg('ai', greeting);
+  // short delay so browser voices finish loading before speaking
+  setTimeout(() => speakText(greeting), 800);
 });
 </script>
 </body>
