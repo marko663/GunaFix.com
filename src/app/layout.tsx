@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
-import { siteConfig } from "@/data/content";
+import { siteConfig } from "@/data/solaris";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,20 +19,23 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} | ${siteConfig.tagline}`,
+    default: `${siteConfig.name} | ${siteConfig.claim}`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  icons: { icon: "/logo.svg" },
   openGraph: {
-    title: `${siteConfig.name} | ${siteConfig.tagline}`,
+    title: `${siteConfig.name} | ${siteConfig.claim}`,
     description: siteConfig.description,
     url: siteConfig.url,
     siteName: siteConfig.name,
+    locale: siteConfig.locale,
     type: "website",
+    images: ["/logo.svg"],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} | ${siteConfig.tagline}`,
+    title: `${siteConfig.name} | ${siteConfig.claim}`,
     description: siteConfig.description,
   },
 };
@@ -43,8 +46,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+    <html
+      lang="de"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="flex min-h-full flex-col">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -54,7 +60,14 @@ export default function RootLayout({
               name: siteConfig.name,
               url: siteConfig.url,
               email: siteConfig.email,
+              telephone: siteConfig.phone,
               description: siteConfig.description,
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: siteConfig.address.street,
+                addressLocality: siteConfig.address.city,
+                addressCountry: "DE",
+              },
             }),
           }}
         />

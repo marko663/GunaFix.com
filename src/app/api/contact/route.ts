@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
 
-import { siteConfig } from "@/data/content";
+import { siteConfig } from "@/data/solaris";
 
 const contactSchema = z.object({
   type: z.literal("contact"),
@@ -38,8 +38,8 @@ export async function POST(request: Request) {
   const data = parsed.data;
   const subject =
     data.type === "booking"
-      ? `New call request from ${data.name}`
-      : `New contact form message from ${data.name}`;
+      ? `Neue Terminanfrage von ${data.name}`
+      : `Neue Projektanfrage von ${data.name}`;
 
   const body =
     data.type === "booking"
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   try {
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: process.env.CONTACT_FROM_EMAIL || "GunaFix <onboarding@resend.dev>",
+      from: process.env.CONTACT_FROM_EMAIL || "Solaris Industrial <onboarding@resend.dev>",
       to: toEmail,
       replyTo: data.email,
       subject,

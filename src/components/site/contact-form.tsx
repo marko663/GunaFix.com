@@ -15,9 +15,22 @@ export function ContactForm() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Hold the reference: `currentTarget` is cleared once the handler yields.
+    const form = event.currentTarget;
     setStatus("submitting");
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
+    const detail = [
+      ["Unternehmen", formData.get("company")],
+      ["Telefon", formData.get("phone")],
+      ["Standort der Fläche", formData.get("location")],
+      ["Stellplätze", formData.get("spaces")],
+    ]
+      .filter(([, value]) => typeof value === "string" && value.trim() !== "")
+      .map(([label, value]) => `${label}: ${value}`)
+      .join("\n");
+
+    const message = [detail, formData.get("message")].filter(Boolean).join("\n\n");
 
     try {
       const res = await fetch("/api/contact", {
@@ -27,13 +40,13 @@ export function ContactForm() {
           type: "contact",
           name: formData.get("name"),
           email: formData.get("email"),
-          message: formData.get("message"),
+          message,
         }),
       });
 
       if (!res.ok) throw new Error("Request failed");
       setStatus("success");
-      event.currentTarget.reset();
+      form.reset();
     } catch {
       setStatus("error");
     }
@@ -41,47 +54,83 @@ export function ContactForm() {
 
   if (status === "success") {
     return (
-      <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-6 text-center">
-        <p className="font-medium text-emerald-300">Message sent.</p>
-        <p className="mt-1 text-sm text-white/60">
-          We&apos;ll get back to you within one business day.
+      <div className="border border-solar/40 bg-solar/10 p-8">
+        <p className="text-lg font-semibold text-solar">Anfrage übermittelt.</p>
+        <p className="mt-2 text-sm leading-relaxed text-white/60">
+          Vielen Dank. Wir melden uns innerhalb eines Werktags mit einer ersten Einschätzung
+          zu Ihrer Fläche.
         </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" name="name" required placeholder="Jane Doe" />
+          <Label htmlFor="name">Name *</Label>
+          <Input id="name" name="name" required placeholder="Vor- und Nachname" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" required placeholder="jane@company.com" />
+          <Label htmlFor="company">Unternehmen</Label>
+          <Input id="company" name="company" placeholder="Firmenname" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">E-Mail *</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            required
+            placeholder="name@unternehmen.de"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="phone">Telefon</Label>
+          <Input id="phone" name="phone" type="tel" placeholder="+49 …" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="location">Standort der Fläche</Label>
+          <Input id="location" name="location" placeholder="PLZ und Ort" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="spaces">Anzahl Stellplätze</Label>
+          <Input id="spaces" name="spaces" placeholder="z. B. 120" />
         </div>
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="message">What&apos;s broken or what do you need?</Label>
-        <Textarea id="message" name="message" required placeholder="Tell us about your site..." />
+        <Label htmlFor="message">Ihr Projekt *</Label>
+        <Textarea
+          id="message"
+          name="message"
+          required
+          rows={6}
+          placeholder="Beschreiben Sie kurz die Fläche, die Fahrzeugtypen und den gewünschten Fertigstellungstermin."
+        />
       </div>
 
       {status === "error" && (
-        <p className="text-sm text-red-400">
-          Something went wrong sending your message. Please try again or email us directly.
+        <p className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder schreiben
+          Sie uns direkt per E-Mail.
         </p>
       )}
+
+      <p className="text-xs leading-relaxed text-white/40">
+        Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Angaben zur Bearbeitung der Anfrage
+        zu. Details finden Sie in unserer Datenschutzerklärung.
+      </p>
 
       <Button type="submit" size="lg" disabled={status === "submitting"} className="w-full sm:w-auto">
         {status === "submitting" ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            Sending...
+            Wird gesendet …
           </>
         ) : (
           <>
-            Send Message
+            Anfrage senden
             <Send className="size-4" />
           </>
         )}

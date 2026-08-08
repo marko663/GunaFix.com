@@ -6,23 +6,23 @@ import { Button } from "@/components/ui/button";
 export default function NotFound() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center px-4 py-32 text-center sm:px-6 lg:px-8">
-      <p className="font-mono text-sm uppercase tracking-[0.2em] text-emerald-400">404</p>
+      <p className="font-mono text-sm tracking-[0.2em] text-solar uppercase">404</p>
       <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-        This page is broken. Fitting, really.
+        Diese Seite gibt es nicht.
       </h1>
       <p className="mt-4 text-lg text-white/60">
-        The page you&apos;re looking for doesn&apos;t exist. Let&apos;s get you back on track,
-        or tell us and we&apos;ll fix it.
+        Der aufgerufene Inhalt wurde verschoben oder existiert nicht mehr. Von der Startseite aus
+        finden Sie alle Baureihen, Projekte und Fachbeiträge.
       </p>
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+      <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
         <Button asChild size="lg">
           <Link href="/">
             <ArrowLeft className="size-4" />
-            Back home
+            Zur Startseite
           </Link>
         </Button>
         <Button asChild variant="outline" size="lg">
-          <Link href="/contact">Report it</Link>
+          <Link href="/kontakt">Kontakt aufnehmen</Link>
         </Button>
       </div>
     </div>

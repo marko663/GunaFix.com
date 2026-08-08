@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480" width="720" height="480">
+  <rect width="720" height="480" fill="#000000"/>
+  <g transform="translate(260 60) scale(1)">
+    <g fill="none" stroke-width="25" stroke-linejoin="miter" stroke-miterlimit="6">
+      <path d="M176 56 L100 12 L24 56 L24 101 L176 145" stroke="#ffffff"/>
+      <path d="M24 145 L100 189 L176 145" stroke="#f5c518"/>
+    </g>
+  </g>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" text-anchor="middle">
+    <text x="360" y="335" fill="#ffffff" font-size="72" font-weight="600" letter-spacing="18">SOLARIS</text>
+    <text x="360" y="385" fill="#f5c518" font-size="30" font-weight="500" letter-spacing="14">INDUSTRIAL</text>
+    <text x="360" y="425" fill="#ffffff" font-size="16" font-weight="400" letter-spacing="6">SMART RENEWABLE ENERGY SOLUTIONS</text>
+  </g>
+  <g stroke="#f5c518" stroke-width="2" fill="none" opacity="0.8">
+    <path d="M232 372 h-40"/>
+    <path d="M488 372 h40"/>
+  </g>
+</svg>

@@ -1,24 +1,23 @@
 import type { MetadataRoute } from "next";
 
-import { services, industries, technologies, siteConfig } from "@/data/content";
+import { articles, carports, projects, siteConfig } from "@/data/solaris";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
-    "/services",
-    "/industries",
-    "/technologies",
-    "/pricing",
-    "/faq",
-    "/contact",
-    "/privacy",
-    "/terms",
+    "/carports",
+    "/groundforce",
+    "/projekte",
+    "/wissensdatenbank",
+    "/kontakt",
+    "/impressum",
+    "/datenschutz",
   ];
 
   const dynamicRoutes = [
-    ...services.map((s) => `/services/${s.slug}`),
-    ...industries.map((i) => `/industries/${i.slug}`),
-    ...technologies.map((t) => `/technologies/${t.slug}`),
+    ...carports.map((c) => `/carports/${c.slug}`),
+    ...projects.map((p) => `/projekte/${p.slug}`),
+    ...articles.map((a) => `/wissensdatenbank/${a.slug}`),
   ];
 
   return [...staticRoutes, ...dynamicRoutes].map((path) => ({

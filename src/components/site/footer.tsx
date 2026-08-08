@@ -1,33 +1,28 @@
 import Link from "next/link";
-import { Wrench } from "lucide-react";
 
-import { mainNav, siteConfig } from "@/data/content";
+import { Logo } from "@/components/brand/logo";
+import { carports, certifications, legalNav, mainNav, siteConfig } from "@/data/solaris";
 
 export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-white/10 bg-[#05070a]">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="border-t border-white/10 bg-black">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           <div>
-            <Link href="/" className="flex items-center gap-2 font-semibold text-white">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
-                <Wrench className="size-4" />
-              </span>
-              {siteConfig.name}
-            </Link>
-            <p className="mt-3 max-w-xs text-sm text-white/50">
-              {siteConfig.tagline} {siteConfig.description}
+            <Logo withTagline />
+            <p className="mt-6 max-w-xs text-sm leading-relaxed text-white/50">
+              {siteConfig.description}
             </p>
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-white">Explore</p>
-            <ul className="mt-4 space-y-2">
+            <p className="eyebrow">Navigation</p>
+            <ul className="mt-5 space-y-3">
               {mainNav.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-sm text-white/50 hover:text-white">
+                  <Link href={item.href} className="text-sm text-white/60 hover:text-solar">
                     {item.label}
                   </Link>
                 </li>
@@ -36,46 +31,65 @@ export function Footer() {
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-white">Company</p>
-            <ul className="mt-4 space-y-2">
-              <li>
-                <Link href="/contact" className="text-sm text-white/50 hover:text-white">
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-sm text-white/50 hover:text-white">
-                  Privacy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-sm text-white/50 hover:text-white">
-                  Terms
-                </Link>
-              </li>
+            <p className="eyebrow">Baureihen</p>
+            <ul className="mt-5 space-y-3">
+              {carports.map((carport) => (
+                <li key={carport.slug}>
+                  <Link
+                    href={`/carports/${carport.slug}`}
+                    className="text-sm text-white/60 hover:text-solar"
+                  >
+                    {carport.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-white">Get in touch</p>
-            <ul className="mt-4 space-y-2">
+            <p className="eyebrow">Kontakt</p>
+            <ul className="mt-5 space-y-3 text-sm text-white/60">
               <li>
-                <a
-                  href={`mailto:${siteConfig.email}`}
-                  className="text-sm text-white/50 hover:text-white"
-                >
+                <a href={`mailto:${siteConfig.email}`} className="hover:text-solar">
                   {siteConfig.email}
                 </a>
               </li>
-              <li className="text-sm text-white/50">EU-based · {siteConfig.timezone}</li>
+              <li>
+                <a href={`tel:${siteConfig.phoneHref}`} className="hover:text-solar">
+                  {siteConfig.phone}
+                </a>
+              </li>
+              <li className="pt-1 leading-relaxed">
+                {siteConfig.address.street}
+                <br />
+                {siteConfig.address.city}
+                <br />
+                {siteConfig.address.country}
+              </li>
+              <li className="text-white/40">{siteConfig.openingHours}</li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row">
-          <p className="text-xs text-white/40">
-            © {year} {siteConfig.url.replace("https://", "")} · Built with AI.
+        <div className="mt-14 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/10 pt-8">
+          {certifications.map((cert) => (
+            <span key={cert.code} className="text-xs tracking-[0.16em] text-white/35 uppercase">
+              {cert.code}
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <p className="text-xs text-white/35">
+            © {year} {siteConfig.name}. Alle Rechte vorbehalten.
           </p>
+          <div className="flex gap-6">
+            {legalNav.map((item) => (
+              <Link key={item.href} href={item.href} className="text-xs text-white/35 hover:text-white">
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </footer>
