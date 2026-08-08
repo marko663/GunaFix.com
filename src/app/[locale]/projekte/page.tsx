@@ -1,28 +1,58 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
-import { projects, projectsIntro, stats } from "@/data/solaris";
+import { getContent } from "@/data/content";
+import { isLocale, localePath, locales } from "@/data/site";
 
-export const metadata: Metadata = {
-  title: "Unsere Projekte",
-  description: projectsIntro.subtitle,
-};
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
 
-export default function ProjectsPage() {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const c = getContent(locale);
+
+  return {
+    title: c.projectsIntro.title,
+    description: c.projectsIntro.subtitle,
+    alternates: {
+      canonical: `/${locale}/projekte`,
+      languages: Object.fromEntries(locales.map((code) => [code, `/${code}/projekte`])),
+    },
+  };
+}
+
+export default async function ProjectsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const c = getContent(locale);
+  const { ui } = c;
+
   return (
     <>
       <PageHeader
-        eyebrow="Referenzen"
-        title={projectsIntro.title}
-        subtitle={projectsIntro.subtitle}
+        eyebrow={ui.eyebrowReferences}
+        title={c.projectsIntro.title}
+        subtitle={c.projectsIntro.subtitle}
       />
 
       <section className="border-b border-white/10">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-white/10 px-4 sm:px-6 lg:grid-cols-4 lg:px-8">
-          {stats.map((stat) => (
+          {c.stats.map((stat) => (
             <div key={stat.label} className="bg-black px-2 py-10 text-center">
               <p className="text-3xl font-semibold text-solar sm:text-4xl">{stat.value}</p>
               <p className="mt-2 text-xs tracking-[0.12em] text-white/45 uppercase">
@@ -35,11 +65,15 @@ export default function ProjectsPage() {
 
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <p className="mb-10 border border-solar/30 bg-solar/5 px-5 py-4 text-sm leading-relaxed text-white/70">
+            {c.projectsIntro.disclaimer}
+          </p>
+
           <div className="grid gap-px bg-white/10 md:grid-cols-2">
-            {projects.map((project) => (
+            {c.projects.map((project) => (
               <Link
                 key={project.slug}
-                href={`/projekte/${project.slug}`}
+                href={localePath(locale, `/projekte/${project.slug}`)}
                 className="group flex flex-col bg-black p-8 transition-colors hover:bg-surface lg:p-10"
               >
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs tracking-[0.12em] uppercase">
@@ -65,7 +99,7 @@ export default function ProjectsPage() {
                 </dl>
 
                 <span className="mt-8 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-solar uppercase">
-                  Projekt ansehen
+                  {ui.viewProject}
                   <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
@@ -75,9 +109,10 @@ export default function ProjectsPage() {
       </section>
 
       <CtaSection
-        title="Ein vergleichbares Projekt geplant?"
-        body="Wir zeigen Ihnen gern Referenzen aus Ihrer Branche und stellen den Kontakt zu Betreibern her, die eine ähnliche Fläche überdacht haben."
-        label="Referenzen anfragen"
+        locale={locale}
+        title={ui.projectsCtaTitle}
+        body={ui.projectsCtaBody}
+        label={ui.projectsCtaLabel}
       />
     </>
   );

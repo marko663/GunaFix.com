@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
 
-import { siteConfig } from "@/data/solaris";
+import { siteConfig } from "@/data/site";
 
 const contactSchema = z.object({
   type: z.literal("contact"),

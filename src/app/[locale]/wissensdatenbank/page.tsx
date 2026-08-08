@@ -1,26 +1,57 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
 import { FaqSection } from "@/components/site/faq-section";
-import { articles, faq, knowledgeIntro } from "@/data/solaris";
+import { getContent } from "@/data/content";
+import { isLocale, localePath, locales } from "@/data/site";
 
-export const metadata: Metadata = {
-  title: "Wissensdatenbank",
-  description: knowledgeIntro.subtitle,
-};
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
 
-export default function KnowledgePage() {
-  const categories = Array.from(new Set(articles.map((article) => article.category)));
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const c = getContent(locale);
+
+  return {
+    title: c.knowledgeIntro.title,
+    description: c.knowledgeIntro.subtitle,
+    alternates: {
+      canonical: `/${locale}/wissensdatenbank`,
+      languages: Object.fromEntries(
+        locales.map((code) => [code, `/${code}/wissensdatenbank`])
+      ),
+    },
+  };
+}
+
+export default async function KnowledgePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const c = getContent(locale);
+  const { ui } = c;
+  const categories = Array.from(new Set(c.articles.map((article) => article.category)));
 
   return (
     <>
       <PageHeader
-        eyebrow="Wissen"
-        title={knowledgeIntro.title}
-        subtitle={knowledgeIntro.subtitle}
+        eyebrow={ui.eyebrowKnowledge}
+        title={c.knowledgeIntro.title}
+        subtitle={c.knowledgeIntro.subtitle}
       >
         <div className="mt-8 flex flex-wrap gap-2">
           {categories.map((category) => (
@@ -37,10 +68,10 @@ export default function KnowledgePage() {
       <section className="border-b border-white/10 py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-px bg-white/10 md:grid-cols-2 lg:grid-cols-3">
-            {articles.map((article) => (
+            {c.articles.map((article) => (
               <Link
                 key={article.slug}
-                href={`/wissensdatenbank/${article.slug}`}
+                href={localePath(locale, `/wissensdatenbank/${article.slug}`)}
                 className="group flex flex-col bg-black p-8 transition-colors hover:bg-surface"
               >
                 <div className="flex items-center gap-3 text-xs tracking-[0.12em] uppercase">
@@ -54,7 +85,7 @@ export default function KnowledgePage() {
                   {article.teaser}
                 </p>
                 <span className="mt-6 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-solar uppercase">
-                  Artikel lesen
+                  {ui.readArticle}
                   <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
@@ -63,12 +94,13 @@ export default function KnowledgePage() {
         </div>
       </section>
 
-      <FaqSection items={faq} />
+      <FaqSection items={c.faq} title={ui.faqTitle} eyebrow={ui.eyebrowFaq} />
 
       <CtaSection
-        title="Frage nicht beantwortet?"
-        body="Schreiben Sie uns Ihre konkrete Fragestellung. Sie erhalten eine fachliche Antwort von den Kolleginnen und Kollegen aus Konstruktion oder Projektierung – nicht aus dem Vertrieb."
-        label="Frage stellen"
+        locale={locale}
+        title={ui.knowledgeCtaTitle}
+        body={ui.knowledgeCtaBody}
+        label={ui.knowledgeCtaLabel}
       />
     </>
   );

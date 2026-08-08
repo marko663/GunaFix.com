@@ -5,24 +5,35 @@ import { ArrowLeft } from "lucide-react";
 
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
-import { articles } from "@/data/solaris";
+import { getContent } from "@/data/content";
+import { isLocale, localePath, locales } from "@/data/site";
 
 export function generateStaticParams() {
-  return articles.map((article) => ({ slug: article.slug }));
+  return locales.flatMap((locale) =>
+    getContent(locale).articles.map((article) => ({ locale, slug: article.slug }))
+  );
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
-  const article = articles.find((a) => a.slug === slug);
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) return {};
+
+  const article = getContent(locale).articles.find((a) => a.slug === slug);
   if (!article) return {};
 
   return {
     title: { absolute: article.seoTitle },
     description: article.metaDescription,
+    alternates: {
+      canonical: `/${locale}/wissensdatenbank/${slug}`,
+      languages: Object.fromEntries(
+        locales.map((code) => [code, `/${code}/wissensdatenbank/${slug}`])
+      ),
+    },
     openGraph: {
       title: article.seoTitle,
       description: article.metaDescription,
@@ -34,18 +45,22 @@ export async function generateMetadata({
 export default async function ArticlePage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
-  const article = articles.find((a) => a.slug === slug);
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const c = getContent(locale);
+  const { ui } = c;
+  const article = c.articles.find((a) => a.slug === slug);
   if (!article) notFound();
 
-  const related = articles.filter((a) => a.slug !== article.slug).slice(0, 3);
+  const related = c.articles.filter((a) => a.slug !== article.slug).slice(0, 3);
 
   return (
     <>
       <PageHeader
-        eyebrow={`${article.category} · ${article.readingTime} Lesezeit`}
+        eyebrow={`${article.category} · ${article.readingTime} ${ui.readingTime}`}
         title={article.title}
         subtitle={article.teaser}
       />
@@ -76,23 +91,23 @@ export default async function ArticlePage({
           ))}
 
           <Link
-            href="/wissensdatenbank"
+            href={localePath(locale, "/wissensdatenbank")}
             className="mt-16 inline-flex items-center gap-2 text-sm text-white/50 hover:text-solar"
           >
             <ArrowLeft className="size-4" />
-            Zur Wissensdatenbank
+            {ui.backToKnowledge}
           </Link>
         </div>
       </article>
 
       <section className="border-b border-white/10 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl font-semibold text-white">Weitere Artikel</h2>
+          <h2 className="text-xl font-semibold text-white">{ui.moreArticles}</h2>
           <div className="mt-8 grid gap-px bg-white/10 md:grid-cols-3">
             {related.map((other) => (
               <Link
                 key={other.slug}
-                href={`/wissensdatenbank/${other.slug}`}
+                href={localePath(locale, `/wissensdatenbank/${other.slug}`)}
                 className="bg-black p-7 transition-colors hover:bg-surface"
               >
                 <p className="text-xs tracking-[0.12em] text-solar uppercase">{other.category}</p>
@@ -104,7 +119,7 @@ export default async function ArticlePage({
         </div>
       </section>
 
-      <CtaSection />
+      <CtaSection locale={locale} title={ui.ctaTitle} body={ui.ctaBody} label={ui.ctaLabel} />
     </>
   );
 }

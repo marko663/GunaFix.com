@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { SiteContent } from "@/data/types";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-export function ContactForm() {
+export function ContactForm({ t }: { t: SiteContent["form"] }) {
   const [status, setStatus] = React.useState<Status>("idle");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -21,10 +22,10 @@ export function ContactForm() {
 
     const formData = new FormData(form);
     const detail = [
-      ["Unternehmen", formData.get("company")],
-      ["Telefon", formData.get("phone")],
-      ["Standort der Fläche", formData.get("location")],
-      ["Stellplätze", formData.get("spaces")],
+      ["Company", formData.get("company")],
+      ["Phone", formData.get("phone")],
+      ["Site location", formData.get("location")],
+      ["Parking spaces", formData.get("spaces")],
     ]
       .filter(([, value]) => typeof value === "string" && value.trim() !== "")
       .map(([label, value]) => `${label}: ${value}`)
@@ -55,11 +56,8 @@ export function ContactForm() {
   if (status === "success") {
     return (
       <div className="border border-solar/40 bg-solar/10 p-8">
-        <p className="text-lg font-semibold text-solar">Anfrage übermittelt.</p>
-        <p className="mt-2 text-sm leading-relaxed text-white/60">
-          Vielen Dank. Wir melden uns innerhalb eines Werktags mit einer ersten Einschätzung
-          zu Ihrer Fläche.
-        </p>
+        <p className="text-lg font-semibold text-solar">{t.successTitle}</p>
+        <p className="mt-2 text-sm leading-relaxed text-white/60">{t.successBody}</p>
       </div>
     );
   }
@@ -68,69 +66,65 @@ export function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="name">Name *</Label>
-          <Input id="name" name="name" required placeholder="Vor- und Nachname" />
+          <Label htmlFor="name">{t.name}</Label>
+          <Input id="name" name="name" required placeholder={t.namePlaceholder} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="company">Unternehmen</Label>
-          <Input id="company" name="company" placeholder="Firmenname" />
+          <Label htmlFor="company">{t.company}</Label>
+          <Input id="company" name="company" placeholder={t.companyPlaceholder} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">E-Mail *</Label>
+          <Label htmlFor="email">{t.email}</Label>
           <Input
             id="email"
             name="email"
             type="email"
             required
-            placeholder="name@unternehmen.de"
+            placeholder={t.emailPlaceholder}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="phone">Telefon</Label>
-          <Input id="phone" name="phone" type="tel" placeholder="+49 …" />
+          <Label htmlFor="phone">{t.phone}</Label>
+          <Input id="phone" name="phone" type="tel" placeholder={t.phonePlaceholder} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="location">Standort der Fläche</Label>
-          <Input id="location" name="location" placeholder="PLZ und Ort" />
+          <Label htmlFor="location">{t.location}</Label>
+          <Input id="location" name="location" placeholder={t.locationPlaceholder} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="spaces">Anzahl Stellplätze</Label>
-          <Input id="spaces" name="spaces" placeholder="z. B. 120" />
+          <Label htmlFor="spaces">{t.spaces}</Label>
+          <Input id="spaces" name="spaces" placeholder={t.spacesPlaceholder} />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="message">Ihr Projekt *</Label>
+        <Label htmlFor="message">{t.message}</Label>
         <Textarea
           id="message"
           name="message"
           required
           rows={6}
-          placeholder="Beschreiben Sie kurz die Fläche, die Fahrzeugtypen und den gewünschten Fertigstellungstermin."
+          placeholder={t.messagePlaceholder}
         />
       </div>
 
       {status === "error" && (
         <p className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder schreiben
-          Sie uns direkt per E-Mail.
+          {t.errorMessage}
         </p>
       )}
 
-      <p className="text-xs leading-relaxed text-white/40">
-        Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Angaben zur Bearbeitung der Anfrage
-        zu. Details finden Sie in unserer Datenschutzerklärung.
-      </p>
+      <p className="text-xs leading-relaxed text-white/40">{t.consent}</p>
 
       <Button type="submit" size="lg" disabled={status === "submitting"} className="w-full sm:w-auto">
         {status === "submitting" ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            Wird gesendet …
+            {t.submitting}
           </>
         ) : (
           <>
-            Anfrage senden
+            {t.submit}
             <Send className="size-4" />
           </>
         )}

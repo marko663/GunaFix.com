@@ -5,24 +5,33 @@ import { ArrowLeft } from "lucide-react";
 
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
-import { projects } from "@/data/solaris";
+import { getContent } from "@/data/content";
+import { isLocale, localePath, locales } from "@/data/site";
 
 export function generateStaticParams() {
-  return projects.map((project) => ({ slug: project.slug }));
+  return locales.flatMap((locale) =>
+    getContent(locale).projects.map((project) => ({ locale, slug: project.slug }))
+  );
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
-  const project = projects.find((p) => p.slug === slug);
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) return {};
+
+  const project = getContent(locale).projects.find((p) => p.slug === slug);
   if (!project) return {};
 
   return {
     title: project.title,
     description: project.summary,
+    alternates: {
+      canonical: `/${locale}/projekte/${slug}`,
+      languages: Object.fromEntries(locales.map((code) => [code, `/${code}/projekte/${slug}`])),
+    },
     openGraph: { title: project.title, description: project.summary },
   };
 }
@@ -30,10 +39,14 @@ export async function generateMetadata({
 export default async function ProjectDetailPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
-  const project = projects.find((p) => p.slug === slug);
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const c = getContent(locale);
+  const { ui } = c;
+  const project = c.projects.find((p) => p.slug === slug);
   if (!project) notFound();
 
   return (
@@ -60,11 +73,11 @@ export default async function ProjectDetailPage({
       <section className="border-b border-white/10 py-20">
         <div className="mx-auto grid max-w-5xl gap-12 px-4 sm:px-6 md:grid-cols-2 lg:px-8">
           <div>
-            <p className="eyebrow">Aufgabenstellung</p>
+            <p className="eyebrow">{ui.challenge}</p>
             <p className="mt-5 leading-relaxed text-white/65">{project.challenge}</p>
           </div>
           <div>
-            <p className="eyebrow">Lösung</p>
+            <p className="eyebrow">{ui.solution}</p>
             <p className="mt-5 leading-relaxed text-white/65">{project.solution}</p>
           </div>
         </div>
@@ -72,32 +85,30 @@ export default async function ProjectDetailPage({
         <div className="mx-auto mt-14 max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4 border border-white/10 px-6 py-5">
             <div>
-              <p className="text-xs tracking-[0.12em] text-white/40 uppercase">
-                Eingesetzte Baureihe
-              </p>
+              <p className="text-xs tracking-[0.12em] text-white/40 uppercase">{ui.modelUsed}</p>
               <p className="mt-1 text-lg font-semibold text-white">{project.model}</p>
             </div>
             <Link
-              href="/carports"
+              href={localePath(locale, "/carports")}
               className="text-sm font-semibold tracking-[0.12em] text-solar uppercase hover:underline"
             >
-              Baureihen ansehen
+              {ui.viewModels}
             </Link>
           </div>
         </div>
 
         <div className="mx-auto mt-10 max-w-5xl px-4 sm:px-6 lg:px-8">
           <Link
-            href="/projekte"
+            href={localePath(locale, "/projekte")}
             className="inline-flex items-center gap-2 text-sm text-white/50 hover:text-solar"
           >
             <ArrowLeft className="size-4" />
-            Alle Projekte
+            {ui.allProjects}
           </Link>
         </div>
       </section>
 
-      <CtaSection />
+      <CtaSection locale={locale} title={ui.ctaTitle} body={ui.ctaBody} label={ui.ctaLabel} />
     </>
   );
 }

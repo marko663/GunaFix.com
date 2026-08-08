@@ -1,23 +1,32 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
-import { CarportVisual, IconCarportCar, IconCarportTruck, IconScrewPile, IconStorageLeaf } from "@/components/brand/illustrations";
 import {
-  carports,
-  certifications,
-  groundForce,
-  hero,
-  processSteps,
-  projects,
-  articles,
-  stats,
-  valueProps,
-} from "@/data/solaris";
+  CarportVisual,
+  IconCarportCar,
+  IconCarportTruck,
+  IconScrewPile,
+  IconStorageLeaf,
+} from "@/components/brand/illustrations";
+import { getContent } from "@/data/content";
+import { isLocale, localePath } from "@/data/site";
 
-export default function HomePage() {
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const c = getContent(locale);
+  const { ui } = c;
+  const L = (path: string) => localePath(locale, path);
+
   return (
     <>
       {/* Hero */}
@@ -27,16 +36,16 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
           <div className="grid items-center gap-16 lg:grid-cols-[1.05fr_1fr]">
             <div>
-              <p className="eyebrow">{hero.eyebrow}</p>
+              <p className="eyebrow">{c.hero.eyebrow}</p>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight text-balance text-white sm:text-5xl lg:text-6xl">
-                {hero.title}
+                {c.hero.title}
               </h1>
               <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/60">
-                {hero.subtitle}
+                {c.hero.subtitle}
               </p>
 
               <ul className="mt-8 space-y-3">
-                {hero.highlights.map((item) => (
+                {c.hero.highlights.map((item) => (
                   <li key={item} className="flex items-start gap-3 text-sm text-white/70">
                     <Check className="mt-0.5 size-4 shrink-0 text-solar" />
                     {item}
@@ -46,10 +55,10 @@ export default function HomePage() {
 
               <div className="mt-10 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
-                  <Link href={hero.primaryCta.href}>{hero.primaryCta.label}</Link>
+                  <Link href={L(c.hero.primaryCta.href)}>{c.hero.primaryCta.label}</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link href={hero.secondaryCta.href}>{hero.secondaryCta.label}</Link>
+                  <Link href={L(c.hero.secondaryCta.href)}>{c.hero.secondaryCta.label}</Link>
                 </Button>
               </div>
             </div>
@@ -62,19 +71,19 @@ export default function HomePage() {
                 <div className="flex flex-col items-center gap-2 p-5 text-white/80">
                   <IconCarportCar />
                   <span className="text-[0.65rem] tracking-[0.14em] text-white/45 uppercase">
-                    Pkw
+                    {ui.vehiclePkw}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-2 p-5 text-white/80">
                   <IconCarportTruck />
                   <span className="text-[0.65rem] tracking-[0.14em] text-white/45 uppercase">
-                    Lkw
+                    {ui.vehicleLkw}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-2 p-5 text-white/80">
                   <IconStorageLeaf />
                   <span className="text-[0.65rem] tracking-[0.14em] text-white/45 uppercase">
-                    Speicher
+                    {ui.vehicleStorage}
                   </span>
                 </div>
               </div>
@@ -86,7 +95,7 @@ export default function HomePage() {
       {/* Stats */}
       <section className="border-b border-white/10">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-white/10 px-4 sm:px-6 lg:grid-cols-4 lg:px-8">
-          {stats.map((stat) => (
+          {c.stats.map((stat) => (
             <div key={stat.label} className="bg-black px-2 py-10 text-center lg:py-12">
               <p className="text-3xl font-semibold text-solar sm:text-4xl">{stat.value}</p>
               <p className="mt-2 text-xs tracking-[0.12em] text-white/45 uppercase">
@@ -102,20 +111,20 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <SectionHeading
-              eyebrow="Carports"
-              title="Fünf Baureihen für jede Parkfläche"
-              subtitle="Vom einreihigen Mitarbeiterparkplatz bis zur überdachten Lkw-Warteschlange – jede Baureihe ist in den Dachtypen T, Y, L und L2 verfügbar und beliebig verlängerbar."
+              eyebrow={c.carportsIntro.title}
+              title={ui.homeCarportsTitle}
+              subtitle={ui.homeCarportsSubtitle}
             />
             <Button asChild variant="outline">
-              <Link href="/carports">Alle Modelle</Link>
+              <Link href={L("/carports")}>{ui.allModels}</Link>
             </Button>
           </div>
 
           <div className="mt-14 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
-            {carports.map((carport) => (
+            {c.carports.map((carport) => (
               <Link
                 key={carport.slug}
-                href={`/carports/${carport.slug}`}
+                href={L(`/carports/${carport.slug}`)}
                 className="group flex flex-col bg-black p-8 transition-colors hover:bg-surface"
               >
                 <div className="h-32">
@@ -128,27 +137,24 @@ export default function HomePage() {
                   {carport.teaser}
                 </p>
                 <span className="mt-6 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-solar uppercase">
-                  Details
+                  {ui.details}
                   <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
             ))}
 
             <Link
-              href="/kontakt"
+              href={L("/kontakt")}
               className="group flex flex-col justify-between bg-black p-8 transition-colors hover:bg-surface"
             >
               <div>
                 <h3 className="text-lg font-semibold tracking-[0.14em] text-white uppercase">
-                  Sonderbau
+                  {ui.customBuildTitle}
                 </h3>
-                <p className="mt-3 text-sm leading-relaxed text-white/55">
-                  Ungewöhnlicher Grundstückszuschnitt, besondere Lasten oder eine Architekturvorgabe?
-                  Wir konstruieren die Anlage frei nach Ihrer Vorgabe.
-                </p>
+                <p className="mt-3 text-sm leading-relaxed text-white/55">{ui.customBuildBody}</p>
               </div>
               <span className="mt-6 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-solar uppercase">
-                Anfrage stellen
+                {ui.customBuildCta}
                 <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
               </span>
             </Link>
@@ -163,11 +169,11 @@ export default function HomePage() {
             <div>
               <SectionHeading
                 eyebrow="GroundForce"
-                title="Gründung an einem Tag – ohne Beton"
-                subtitle={groundForce.subtitle}
+                title={ui.homeGroundForceTitle}
+                subtitle={c.groundForce.subtitle}
               />
               <div className="mt-10 grid gap-6 sm:grid-cols-2">
-                {groundForce.benefits.slice(0, 4).map((benefit) => (
+                {c.groundForce.benefits.slice(0, 4).map((benefit) => (
                   <div key={benefit.title} className="border-l-2 border-solar/40 pl-5">
                     <h3 className="text-sm font-semibold text-white">{benefit.title}</h3>
                     <p className="mt-2 text-sm leading-relaxed text-white/55">{benefit.body}</p>
@@ -175,7 +181,7 @@ export default function HomePage() {
                 ))}
               </div>
               <Button asChild className="mt-10" variant="outline">
-                <Link href="/groundforce">GroundForce im Detail</Link>
+                <Link href={L("/groundforce")}>{ui.groundForceDetail}</Link>
               </Button>
             </div>
 
@@ -184,7 +190,7 @@ export default function HomePage() {
                 <IconScrewPile className="h-40 w-40" />
               </div>
               <dl className="divide-y divide-white/10">
-                {groundForce.specs.slice(0, 4).map((spec) => (
+                {c.groundForce.specs.slice(0, 4).map((spec) => (
                   <div key={spec.label} className="flex justify-between gap-6 px-6 py-4">
                     <dt className="text-xs tracking-[0.12em] text-white/40 uppercase">
                       {spec.label}
@@ -202,12 +208,12 @@ export default function HomePage() {
       <section className="border-b border-white/10 py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
-            eyebrow="Warum Solaris"
-            title="Ein Hersteller, nicht nur ein Lieferant"
-            subtitle="Wir rechnen, konstruieren, fertigen und montieren selbst. Das verkürzt Wege, macht Termine verbindlich und hält die Verantwortung an einer Stelle."
+            eyebrow={ui.eyebrowWhy}
+            title={ui.homeWhyTitle}
+            subtitle={ui.homeWhySubtitle}
           />
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-2">
-            {valueProps.map((prop) => (
+            {c.valueProps.map((prop) => (
               <div key={prop.title} className="bg-black p-8">
                 <h3 className="text-lg font-semibold text-white">{prop.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-white/55">{prop.body}</p>
@@ -216,12 +222,8 @@ export default function HomePage() {
           </div>
 
           <div className="mt-12 flex flex-wrap gap-4">
-            {certifications.map((cert) => (
-              <div
-                key={cert.code}
-                className="border border-white/10 px-5 py-3"
-                title={cert.detail}
-              >
+            {c.certifications.map((cert) => (
+              <div key={cert.code} className="border border-white/10 px-5 py-3" title={cert.detail}>
                 <p className="text-sm font-semibold tracking-[0.12em] text-solar uppercase">
                   {cert.code}
                 </p>
@@ -236,12 +238,12 @@ export default function HomePage() {
       <section className="border-b border-white/10 py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
-            eyebrow="Ablauf"
-            title="Von der Fläche zur fertigen Anlage"
-            subtitle="Fünf Phasen, ein Ansprechpartner. Genehmigung und Netzanschluss laufen dabei parallel zur Konstruktion, nicht danach."
+            eyebrow={ui.eyebrowProcess}
+            title={ui.homeProcessTitle}
+            subtitle={ui.homeProcessSubtitle}
           />
           <ol className="mt-14 grid gap-px bg-white/10 lg:grid-cols-5">
-            {processSteps.map((step) => (
+            {c.processSteps.map((step) => (
               <li key={step.step} className="bg-black p-7">
                 <span className="text-xs font-semibold tracking-[0.2em] text-solar">
                   {step.step}
@@ -259,20 +261,20 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <SectionHeading
-              eyebrow="Unsere Projekte"
-              title="Referenzen aus Industrie, Handel und Logistik"
-              subtitle="Über 700 realisierte Carports, rund 60 MW installierte Leistung, etwa 20.000 überdachte Stellplätze."
+              eyebrow={c.projectsIntro.title}
+              title={ui.homeProjectsTitle}
+              subtitle={ui.homeProjectsSubtitle}
             />
             <Button asChild variant="outline">
-              <Link href="/projekte">Alle Projekte</Link>
+              <Link href={L("/projekte")}>{ui.allProjects}</Link>
             </Button>
           </div>
 
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-3">
-            {projects.slice(0, 3).map((project) => (
+            {c.projects.slice(0, 3).map((project) => (
               <Link
                 key={project.slug}
-                href={`/projekte/${project.slug}`}
+                href={L(`/projekte/${project.slug}`)}
                 className="group bg-black p-8 transition-colors hover:bg-surface"
               >
                 <p className="text-xs tracking-[0.14em] text-solar uppercase">{project.sector}</p>
@@ -299,20 +301,20 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <SectionHeading
-              eyebrow="Wissensdatenbank"
-              title="Antworten vor der Investition"
-              subtitle="Genehmigung, Statik, Wirtschaftlichkeit und Gründung – die Fragen, die vor jedem Carport-Projekt stehen."
+              eyebrow={c.knowledgeIntro.title}
+              title={ui.homeKnowledgeTitle}
+              subtitle={ui.homeKnowledgeSubtitle}
             />
             <Button asChild variant="outline">
-              <Link href="/wissensdatenbank">Zur Wissensdatenbank</Link>
+              <Link href={L("/wissensdatenbank")}>{ui.toKnowledgeBase}</Link>
             </Button>
           </div>
 
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-3">
-            {articles.slice(0, 3).map((article) => (
+            {c.articles.slice(0, 3).map((article) => (
               <Link
                 key={article.slug}
-                href={`/wissensdatenbank/${article.slug}`}
+                href={L(`/wissensdatenbank/${article.slug}`)}
                 className="group flex flex-col bg-black p-8 transition-colors hover:bg-surface"
               >
                 <div className="flex items-center gap-3 text-xs tracking-[0.12em] uppercase">
@@ -324,7 +326,7 @@ export default function HomePage() {
                   {article.teaser}
                 </p>
                 <span className="mt-6 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-solar uppercase">
-                  Lesen
+                  {ui.read}
                   <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
@@ -333,7 +335,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <CtaSection />
+      <CtaSection
+        locale={locale}
+        title={ui.ctaTitle}
+        body={ui.ctaBody}
+        label={ui.ctaLabel}
+      />
     </>
   );
 }

@@ -6,24 +6,35 @@ import { ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
 import { CarportVisual } from "@/components/brand/illustrations";
-import { carports } from "@/data/solaris";
+import { getContent } from "@/data/content";
+import { isLocale, localePath, locales } from "@/data/site";
 
 export function generateStaticParams() {
-  return carports.map((carport) => ({ slug: carport.slug }));
+  return locales.flatMap((locale) =>
+    getContent(locale).carports.map((carport) => ({ locale, slug: carport.slug }))
+  );
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
-  const carport = carports.find((c) => c.slug === slug);
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) return {};
+
+  const carport = getContent(locale).carports.find((c) => c.slug === slug);
   if (!carport) return {};
 
   return {
     title: { absolute: carport.seoTitle },
     description: carport.metaDescription,
+    alternates: {
+      canonical: `/${locale}/carports/${slug}`,
+      languages: Object.fromEntries(
+        locales.map((code) => [code, `/${code}/carports/${slug}`])
+      ),
+    },
     openGraph: { title: carport.seoTitle, description: carport.metaDescription },
   };
 }
@@ -31,13 +42,17 @@ export async function generateMetadata({
 export default async function CarportDetailPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
-  const carport = carports.find((c) => c.slug === slug);
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const c = getContent(locale);
+  const { ui } = c;
+  const carport = c.carports.find((item) => item.slug === slug);
   if (!carport) notFound();
 
-  const others = carports.filter((c) => c.slug !== carport.slug);
+  const others = c.carports.filter((item) => item.slug !== carport.slug);
 
   return (
     <>
@@ -49,13 +64,13 @@ export default async function CarportDetailPage({
             <div className="border border-white/10 bg-surface p-8">
               <CarportVisual variant={carport.visual} />
               <p className="mt-6 text-xs tracking-[0.12em] text-white/35 uppercase">
-                Schematische Seitenansicht · nicht maßstäblich
+                {ui.elevationNote}
               </p>
             </div>
 
             <div className="border border-white/10">
               <p className="border-b border-white/10 px-6 py-4 text-xs font-semibold tracking-[0.16em] text-solar uppercase">
-                Technische Daten
+                {ui.technicalData}
               </p>
               <dl className="divide-y divide-white/10">
                 {carport.specs.map((spec) => (
@@ -75,7 +90,7 @@ export default async function CarportDetailPage({
       <section className="border-b border-white/10 py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            Verfügbare Dachtypen
+            {ui.roofTypes}
           </h2>
           <div className="mt-10 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
             {carport.types.map((type) => (
@@ -95,7 +110,7 @@ export default async function CarportDetailPage({
         <div className="mx-auto grid max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-[1.4fr_1fr] lg:px-8">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              {carport.name} im Einsatz
+              {ui.inUse.replace("{model}", carport.name)}
             </h2>
             <div className="mt-8 space-y-5">
               {carport.body.map((paragraph) => (
@@ -107,7 +122,7 @@ export default async function CarportDetailPage({
           </div>
 
           <div className="border border-white/10 p-8">
-            <p className="eyebrow">Typische Anwendungen</p>
+            <p className="eyebrow">{ui.typicalApplications}</p>
             <ul className="mt-6 space-y-4">
               {carport.applications.map((application) => (
                 <li key={application} className="flex items-start gap-3 text-sm text-white/70">
@@ -123,20 +138,20 @@ export default async function CarportDetailPage({
       <section className="border-b border-white/10 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-xl font-semibold text-white">Weitere Baureihen</h2>
+            <h2 className="text-xl font-semibold text-white">{ui.otherModels}</h2>
             <Link
-              href="/carports"
+              href={localePath(locale, "/carports")}
               className="inline-flex items-center gap-2 text-sm text-white/50 hover:text-solar"
             >
               <ArrowLeft className="size-4" />
-              Übersicht
+              {ui.overview}
             </Link>
           </div>
           <div className="mt-8 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
             {others.map((other) => (
               <Link
                 key={other.slug}
-                href={`/carports/${other.slug}`}
+                href={localePath(locale, `/carports/${other.slug}`)}
                 className="bg-black p-6 transition-colors hover:bg-surface"
               >
                 <p className="text-sm font-semibold tracking-[0.14em] text-white uppercase">
@@ -150,8 +165,10 @@ export default async function CarportDetailPage({
       </section>
 
       <CtaSection
-        title={`${carport.name} für Ihren Standort auslegen`}
-        body="Wir prüfen Schneelastzone, Windzone, Baugrund und Stellplatzraster und legen die Konstruktion konkret für Ihre Fläche aus."
+        locale={locale}
+        title={ui.modelCtaTitle.replace("{model}", carport.name)}
+        body={ui.modelCtaBody}
+        label={ui.requestProject}
       />
     </>
   );
