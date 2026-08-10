@@ -1,0 +1,317 @@
+<title>Solaris Industrial — Farbvarianten / Colour Options</title>
+
+<style>
+  /* Shell adapts to the viewer's theme; each palette panel is fixed by
+     definition, since the panel *is* the colour being judged. */
+  :root {
+    --bg: #f7f7f5;
+    --fg: #16181a;
+    --dim: #5d646b;
+    --rule: rgba(0, 0, 0, 0.12);
+    --card: #ffffff;
+    --mark: #b8860b;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1113; --fg: #eceef0; --dim: #9aa2aa;
+      --rule: rgba(255, 255, 255, 0.14); --card: #171a1d; --mark: #e8b84b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1113; --fg: #eceef0; --dim: #9aa2aa;
+    --rule: rgba(255, 255, 255, 0.14); --card: #171a1d; --mark: #e8b84b;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: var(--sans); line-height: 1.6; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+  p { margin: 0; }
+
+  .page { max-width: 1120px; margin-inline: auto; padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 4vw, 2.5rem) 5rem; }
+  .intro h1 { font-size: clamp(1.9rem, 4.5vw, 2.8rem); }
+  .intro p { color: var(--dim); margin-top: 1rem; max-width: 65ch; }
+  .kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--mark); }
+
+  .option { margin-top: clamp(2.5rem, 6vw, 4rem); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; background: var(--card); }
+  .option > header { padding: 1.25rem clamp(1rem, 3vw, 1.75rem); border-bottom: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; align-items: baseline; }
+  .option > header h2 { font-size: 1.15rem; }
+  .option > header .tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mark); }
+  .option > header .why { color: var(--dim); font-size: 0.9rem; flex-basis: 100%; }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 1px; background: var(--rule); border-bottom: 1px solid var(--rule); }
+  .swatches div { flex: 1 1 130px; background: var(--card); padding: 0.75rem 0.9rem; }
+  .swatches .chip { height: 34px; border-radius: 2px; border: 1px solid var(--rule); }
+  .swatches .nm { font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-top: 0.5rem; }
+  .swatches .hex { font-family: var(--mono); font-size: 0.72rem; }
+
+  .contrast { padding: 0.85rem clamp(1rem, 3vw, 1.75rem); border-bottom: 1px solid var(--rule); font-size: 0.78rem; color: var(--dim); font-family: var(--mono); }
+  .contrast b { color: var(--fg); font-weight: 600; }
+
+  /* ---------- the mini site, painted from the panel's own tokens ---------- */
+  .demo { --pad: clamp(1rem, 3vw, 2rem); background: var(--d-ground); color: var(--d-text); }
+  .demo .inner { max-width: 100%; padding-inline: var(--pad); }
+  .demo .util { background: var(--d-surface2); border-bottom: 1px solid var(--d-line); display: flex; justify-content: space-between; align-items: center; min-height: 34px; font-size: 0.68rem; color: var(--d-muted); }
+  .demo .util .lang { display: flex; gap: 0.35rem; align-items: center; font-weight: 700; letter-spacing: 0.14em; }
+  .demo .util .lang .on { color: var(--d-accent); }
+  .demo .util .lang .off { color: var(--d-muted); }
+  .demo .util .lang i { width: 1px; height: 10px; background: var(--d-line-strong); display: inline-block; }
+
+  .demo .bar { border-bottom: 1px solid var(--d-line); display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 62px; }
+  .demo .brand { display: flex; align-items: center; gap: 0.6rem; }
+  .demo .brand svg { width: 27px; height: 27px; flex: none; }
+  .demo .brand .w { display: flex; flex-direction: column; line-height: 1; }
+  .demo .brand .w b { font-size: 0.78rem; letter-spacing: 0.3em; color: var(--d-white); font-weight: 600; }
+  .demo .brand .w s { text-decoration: none; margin-top: 4px; font-size: 0.42rem; letter-spacing: 0.36em; color: var(--d-accent); }
+  .demo nav { display: none; gap: 1.1rem; font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--d-muted); }
+  @media (min-width: 820px) { .demo nav { display: flex; } }
+  .demo nav .cur { color: var(--d-white); border-bottom: 2px solid var(--d-accent); padding-bottom: 3px; }
+  .demo .cta { background: var(--d-accent); color: var(--d-onAccent); font-size: 0.68rem; font-weight: 700; padding: 0.6rem 1.1rem; white-space: nowrap; }
+
+  .demo .hero { display: grid; gap: 1.75rem; padding-block: clamp(1.75rem, 4vw, 2.75rem); align-items: center; }
+  @media (min-width: 760px) { .demo .hero { grid-template-columns: 1.1fr 0.9fr; } }
+  .demo .eyebrow { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--d-accent); }
+  .demo .hero h3 { font-size: clamp(1.4rem, 3.4vw, 2.05rem); margin-top: 0.6rem; line-height: 1.1; color: var(--d-white); }
+  .demo .hero p { color: var(--d-muted); font-size: 0.85rem; margin-top: 0.8rem; max-width: 46ch; }
+  .demo .btns { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.3rem; }
+  .demo .b1 { background: var(--d-accent); color: var(--d-onAccent); font-size: 0.72rem; font-weight: 700; padding: 0.68rem 1.25rem; }
+  .demo .b2 { border: 1px solid var(--d-line-strong); color: var(--d-text); font-size: 0.72rem; font-weight: 600; padding: 0.68rem 1.25rem; }
+  .demo .art { border: 1px solid var(--d-line); background: var(--d-surface); padding: 1rem; }
+  .demo .art svg { display: block; width: 100%; height: auto; }
+
+  .demo .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--d-line); border-top: 1px solid var(--d-line); }
+  @media (min-width: 620px) { .demo .stats { grid-template-columns: repeat(4, 1fr); } }
+  .demo .stats div { background: var(--d-ground); padding: 1.1rem 0.5rem; text-align: center; }
+  .demo .stats b { display: block; font-size: 1.3rem; color: var(--d-accent); font-weight: 600; }
+  .demo .stats span { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--d-muted); }
+
+  .verdict { padding: 1rem clamp(1rem, 3vw, 1.75rem); font-size: 0.88rem; color: var(--dim); }
+  .verdict b { color: var(--fg); }
+
+  .rec { margin-top: 3rem; border-left: 3px solid var(--mark); padding: 1rem 0 1rem 1.25rem; }
+  .rec h2 { font-size: 1.1rem; }
+  .rec p { color: var(--dim); margin-top: 0.5rem; max-width: 68ch; }
+</style>
+
+<div class="page">
+  <div class="intro">
+    <p class="kicker">Solaris Industrial</p>
+    <h1>Farbvarianten / Colour options</h1>
+    <p>
+      Fünf Paletten, jeweils am echten Seitenkopf gezeigt — Logo, Navigation, Hero und Kennzahlenband.
+      Alle Kontraste sind nach WCAG geprüft. Das Logo bleibt in jeder Variante unverändert.
+      <br><br>
+      Five palettes, each shown on the real page header — logo, navigation, hero and stat band.
+      All contrast ratios are WCAG-checked. The logo is unchanged in every option.
+    </p>
+  </div>
+
+  <!-- ============================ A ============================ -->
+  <section class="option" style="
+      --d-ground:#000000; --d-surface:#0A0B0D; --d-surface2:#111316;
+      --d-text:#F2F4F6; --d-white:#FFFFFF; --d-muted:rgba(242,244,246,0.56);
+      --d-line:rgba(255,255,255,0.11); --d-line-strong:rgba(255,255,255,0.22);
+      --d-accent:#F5C518; --d-onAccent:#000000; --d-panel:#F5C518;">
+    <header>
+      <span class="tag">Option A</span>
+      <h2>Solar Black — aktuell / current</h2>
+      <p class="why">Maximaler Kontrast, exakt die Farben des Logos. / Maximum contrast, exactly the logo's own colours.</p>
+    </header>
+    <div class="swatches">
+      <div><div class="chip" style="background:#000000"></div><p class="nm">Ground</p><p class="hex">#000000</p></div>
+      <div><div class="chip" style="background:#0A0B0D"></div><p class="nm">Surface</p><p class="hex">#0A0B0D</p></div>
+      <div><div class="chip" style="background:#F5C518"></div><p class="nm">Solar</p><p class="hex">#F5C518</p></div>
+      <div><div class="chip" style="background:#FFD12E"></div><p class="nm">Solar hell</p><p class="hex">#FFD12E</p></div>
+      <div><div class="chip" style="background:#F2F4F6"></div><p class="nm">Text</p><p class="hex">#F2F4F6</p></div>
+    </div>
+    <p class="contrast">Text <b>19.05:1</b> AAA · Akzent <b>12.88:1</b> AAA · Text auf Akzent <b>12.88:1</b> AAA</p>
+    <div class="demo" data-demo></div>
+    <p class="verdict"><b>Stärke:</b> kompromisslos, sehr markant, identisch zum Logo. <b>Schwäche:</b> reines Schwarz wirkt bei langen Textstrecken hart.</p>
+  </section>
+
+  <!-- ============================ B ============================ -->
+  <section class="option" style="
+      --d-ground:#0D1012; --d-surface:#14181B; --d-surface2:#1B2024;
+      --d-text:#ECEFF1; --d-white:#FFFFFF; --d-muted:rgba(236,239,241,0.58);
+      --d-line:rgba(255,255,255,0.10); --d-line-strong:rgba(255,255,255,0.22);
+      --d-accent:#FFB020; --d-onAccent:#12161A;">
+    <header>
+      <span class="tag">Option B</span>
+      <h2>Graphite &amp; Amber</h2>
+      <p class="why">Weicheres Grafit statt Schwarz, wärmerer Bernstein-Akzent. / Softer graphite instead of black, warmer amber accent.</p>
+    </header>
+    <div class="swatches">
+      <div><div class="chip" style="background:#0D1012"></div><p class="nm">Ground</p><p class="hex">#0D1012</p></div>
+      <div><div class="chip" style="background:#14181B"></div><p class="nm">Surface</p><p class="hex">#14181B</p></div>
+      <div><div class="chip" style="background:#FFB020"></div><p class="nm">Amber</p><p class="hex">#FFB020</p></div>
+      <div><div class="chip" style="background:#FFC44D"></div><p class="nm">Amber hell</p><p class="hex">#FFC44D</p></div>
+      <div><div class="chip" style="background:#ECEFF1"></div><p class="nm">Text</p><p class="hex">#ECEFF1</p></div>
+    </div>
+    <p class="contrast">Text <b>16.53:1</b> AAA · Akzent <b>10.44:1</b> AAA · Text auf Akzent <b>9.94:1</b> AAA</p>
+    <div class="demo" data-demo></div>
+    <p class="verdict"><b>Stärke:</b> angenehmer bei viel Fließtext, wirkt hochwertig. <b>Schwäche:</b> Bernstein weicht leicht vom Logo-Gelb ab.</p>
+  </section>
+
+  <!-- ============================ C ============================ -->
+  <section class="option" style="
+      --d-ground:#0A1017; --d-surface:#111A24; --d-surface2:#172433;
+      --d-text:#E8EDF2; --d-white:#FFFFFF; --d-muted:rgba(232,237,242,0.58);
+      --d-line:rgba(255,255,255,0.10); --d-line-strong:rgba(120,170,210,0.35);
+      --d-accent:#F5C518; --d-onAccent:#0A1017;">
+    <header>
+      <span class="tag">Option C</span>
+      <h2>Steel &amp; Solar</h2>
+      <p class="why">Tiefes Stahlblau als Grund, Solargelb als Komplementärfarbe. / Deep steel blue ground with solar yellow as the complementary accent.</p>
+    </header>
+    <div class="swatches">
+      <div><div class="chip" style="background:#0A1017"></div><p class="nm">Ground</p><p class="hex">#0A1017</p></div>
+      <div><div class="chip" style="background:#111A24"></div><p class="nm">Surface</p><p class="hex">#111A24</p></div>
+      <div><div class="chip" style="background:#2D4A5F"></div><p class="nm">Stahl</p><p class="hex">#2D4A5F</p></div>
+      <div><div class="chip" style="background:#F5C518"></div><p class="nm">Solar</p><p class="hex">#F5C518</p></div>
+      <div><div class="chip" style="background:#E8EDF2"></div><p class="nm">Text</p><p class="hex">#E8EDF2</p></div>
+    </div>
+    <p class="contrast">Text <b>16.22:1</b> AAA · Akzent <b>11.72:1</b> AAA · Text auf Akzent <b>11.72:1</b> AAA</p>
+    <div class="demo" data-demo></div>
+    <p class="verdict"><b>Stärke:</b> Blau/Gelb ist ein starkes Paar, wirkt technisch und seriös — und hebt sich vom üblichen Schwarz-Gelb der Mitbewerber ab. <b>Schwäche:</b> weiter weg vom Logo-Hintergrund.</p>
+  </section>
+
+  <!-- ============================ D ============================ -->
+  <section class="option" style="
+      --d-ground:#F6F5F2; --d-surface:#FFFFFF; --d-surface2:#ECEAE5;
+      --d-text:#3C4349; --d-white:#14171A; --d-muted:#5F676E;
+      --d-line:rgba(0,0,0,0.13); --d-line-strong:rgba(0,0,0,0.28);
+      --d-accent:#8A6A00; --d-onAccent:#FFFFFF;">
+    <header>
+      <span class="tag">Option D</span>
+      <h2>Daylight — hell / light</h2>
+      <p class="why">Warmes Off-White, architektonisch. Gelb als Fläche, nicht als Text. / Warm off-white, architectural. Yellow used as a fill, never as text.</p>
+    </header>
+    <div class="swatches">
+      <div><div class="chip" style="background:#F6F5F2"></div><p class="nm">Ground</p><p class="hex">#F6F5F2</p></div>
+      <div><div class="chip" style="background:#FFFFFF"></div><p class="nm">Surface</p><p class="hex">#FFFFFF</p></div>
+      <div><div class="chip" style="background:#F5C518"></div><p class="nm">Solar (Fläche)</p><p class="hex">#F5C518</p></div>
+      <div><div class="chip" style="background:#8A6A00"></div><p class="nm">Gold (Text)</p><p class="hex">#8A6A00</p></div>
+      <div><div class="chip" style="background:#14171A"></div><p class="nm">Text</p><p class="hex">#14171A</p></div>
+    </div>
+    <p class="contrast">Text <b>16.50:1</b> AAA · Gold-Akzent <b>4.65:1</b> AA · Schwarz auf Solargelb <b>11.04:1</b> AAA</p>
+    <div class="demo" data-demo data-light="1"></div>
+    <p class="verdict"><b>Stärke:</b> premium, sehr gut lesbar bei technischen Datenblättern, druckfreundlich. <b>Achtung:</b> reines <span style="font-family:var(--mono)">#F5C518</span> als Text auf Weiß erreicht nur 1.63:1 — deshalb dort das dunklere Gold.</p>
+  </section>
+
+  <!-- ============================ E ============================ -->
+  <section class="option" style="
+      --d-ground:#0A1410; --d-surface:#101A15; --d-surface2:#16221B;
+      --d-text:#E9EFEA; --d-white:#FFFFFF; --d-muted:rgba(233,239,234,0.58);
+      --d-line:rgba(255,255,255,0.10); --d-line-strong:rgba(120,200,160,0.32);
+      --d-accent:#F5C518; --d-onAccent:#0A1410;">
+    <header>
+      <span class="tag">Option E</span>
+      <h2>Forest &amp; Solar</h2>
+      <p class="why">Dunkelgrüner Grund — betont die Nachhaltigkeit. / Deep green ground — leans into the sustainability story.</p>
+    </header>
+    <div class="swatches">
+      <div><div class="chip" style="background:#0A1410"></div><p class="nm">Ground</p><p class="hex">#0A1410</p></div>
+      <div><div class="chip" style="background:#101A15"></div><p class="nm">Surface</p><p class="hex">#101A15</p></div>
+      <div><div class="chip" style="background:#2E7D5B"></div><p class="nm">Grün</p><p class="hex">#2E7D5B</p></div>
+      <div><div class="chip" style="background:#F5C518"></div><p class="nm">Solar</p><p class="hex">#F5C518</p></div>
+      <div><div class="chip" style="background:#E9EFEA"></div><p class="nm">Text</p><p class="hex">#E9EFEA</p></div>
+    </div>
+    <p class="contrast">Text <b>16.06:1</b> AAA · Akzent <b>11.50:1</b> AAA · Text auf Akzent <b>11.50:1</b> AAA</p>
+    <div class="demo" data-demo></div>
+    <p class="verdict"><b>Stärke:</b> erzählt „erneuerbar" ohne Worte. <b>Schwäche:</b> Grün ist im Solarbau sehr verbreitet — weniger eigenständig als A oder C.</p>
+  </section>
+
+  <div class="rec">
+    <h2>Empfehlung / Recommendation</h2>
+    <p>
+      <b>A (aktuell)</b> wenn der Auftritt exakt wie das Logo wirken soll — das ist die sicherste Wahl.
+      <b>C (Steel &amp; Solar)</b> wenn Sie sich vom Wettbewerb abheben wollen: Schwarz-Gelb ist im Carport-Markt
+      Standard, Blau-Gelb wirkt technischer und bleibt trotzdem zum Logo passend.
+      <b>D (Daylight)</b> nur, wenn der Auftritt bewusst hell und architektonisch sein soll.
+    </p>
+    <p>
+      Ein Wechsel kostet wenig: Alle Farben liegen als Tokens in <span style="font-family:var(--mono)">globals.css</span>.
+      Es sind rund zehn Zeilen. / Switching is cheap — every colour is a token in
+      <span style="font-family:var(--mono)">globals.css</span>, about ten lines.
+    </p>
+  </div>
+</div>
+
+<script>
+const SW = 'fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+
+function demoMarkup(light) {
+  const line = light ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.85)";
+  const carport = `
+    <svg viewBox="0 0 320 150" aria-hidden="true">
+      <g stroke="var(--d-accent)" ${SW}>
+        <path d="M22 44 L156 20 L156 29 L22 53 Z"/>
+        <path d="M164 20 L298 44 L298 53 L164 29 Z"/>
+        <path d="M56 38 v9 M90 32 v9 M124 26 v9 M198 26 v9 M232 32 v9 M266 38 v9"/>
+      </g>
+      <g stroke="${line}" ${SW}>
+        <path d="M160 27 V140"/>
+        <path opacity="0.5" d="M160 50 L138 42 M160 50 L182 42"/>
+        <g transform="translate(44 104)">
+          <path d="M2 30 v-6 c0-3 2-5 6-6 l10-11 c3-3 6-4 10-4 h22 c4 0 7 1 10 4 l10 11 c4 1 6 3 6 6 v6"/>
+          <path d="M18 7 h34"/><circle cx="21" cy="30" r="7"/><circle cx="57" cy="30" r="7"/>
+        </g>
+        <g transform="translate(182 104)">
+          <path d="M2 30 v-6 c0-3 2-5 6-6 l10-11 c3-3 6-4 10-4 h22 c4 0 7 1 10 4 l10 11 c4 1 6 3 6 6 v6"/>
+          <path d="M18 7 h34"/><circle cx="21" cy="30" r="7"/><circle cx="57" cy="30" r="7"/>
+        </g>
+        <path opacity="0.35" d="M8 140 H312"/>
+      </g>
+    </svg>`;
+
+  const markStroke = light ? "#14171A" : "#FFFFFF";
+
+  return `
+  <div class="util"><div class="inner" style="display:flex;justify-content:space-between;align-items:center;width:100%">
+    <span>+49 30 5683 4120</span>
+    <span class="lang"><span class="on">DE</span><i></i><span class="off">EN</span></span>
+  </div></div>
+
+  <div class="bar"><div class="inner" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;width:100%">
+    <span class="brand">
+      <svg viewBox="0 0 200 200" role="img" aria-label="Solaris Industrial">
+        <g fill="none" stroke-width="25" stroke-linejoin="miter" stroke-miterlimit="6">
+          <path d="M176 56 L100 12 L24 56 L24 101 L176 145" stroke="${markStroke}"/>
+          <path d="M24 145 L100 189 L176 145" stroke="#f5c518"/>
+        </g>
+      </svg>
+      <span class="w"><b>SOLARIS</b><s>INDUSTRIAL</s></span>
+    </span>
+    <nav>
+      <span class="cur">Carports</span><span>GroundForce</span><span>Projekte</span><span>Wissen</span><span>Kontakt</span>
+    </nav>
+    <span class="cta">Projekt anfragen</span>
+  </div></div>
+
+  <div class="inner"><div class="hero">
+    <div>
+      <p class="eyebrow">Europäischer Hersteller · seit 2015</p>
+      <h3>Photovoltaik-Carports einer europäischen Marke</h3>
+      <p>Wir verwandeln Parkflächen in Kraftwerke — Statik, Konstruktion, Fertigung, Fundament und Montage aus einer Hand.</p>
+      <div class="btns"><span class="b1">Projekt anfragen</span><span class="b2">Modelle ansehen</span></div>
+    </div>
+    <div class="art">${carport}</div>
+  </div></div>
+
+  <div class="stats">
+    <div><b>700+</b><span>Carports</span></div>
+    <div><b>60 MW</b><span>PV-Leistung</span></div>
+    <div><b>20.000</b><span>Stellplätze</span></div>
+    <div><b>20 Jahre</b><span>Garantie</span></div>
+  </div>`;
+}
+
+document.querySelectorAll("[data-demo]").forEach((el) => {
+  el.innerHTML = demoMarkup(el.dataset.light === "1");
+});
+</script>
