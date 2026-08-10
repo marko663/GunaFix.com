@@ -96,7 +96,7 @@ export default async function HomePage({
       <section className="border-b border-white/10">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-white/10 px-4 sm:px-6 lg:grid-cols-4 lg:px-8">
           {c.stats.map((stat) => (
-            <div key={stat.label} className="bg-black px-2 py-10 text-center lg:py-12">
+            <div key={stat.label} className="bg-ground px-2 py-10 text-center lg:py-12">
               <p className="text-3xl font-semibold text-solar sm:text-4xl">{stat.value}</p>
               <p className="mt-2 text-xs tracking-[0.12em] text-white/45 uppercase">
                 {stat.label}
@@ -125,7 +125,7 @@ export default async function HomePage({
               <Link
                 key={carport.slug}
                 href={L(`/carports/${carport.slug}`)}
-                className="group flex flex-col bg-black p-8 transition-colors hover:bg-surface"
+                className="group flex flex-col bg-ground p-8 transition-colors hover:bg-surface"
               >
                 <div className="h-32">
                   <CarportVisual variant={carport.visual} />
@@ -145,7 +145,7 @@ export default async function HomePage({
 
             <Link
               href={L("/kontakt")}
-              className="group flex flex-col justify-between bg-black p-8 transition-colors hover:bg-surface"
+              className="group flex flex-col justify-between bg-ground p-8 transition-colors hover:bg-surface"
             >
               <div>
                 <h3 className="text-lg font-semibold tracking-[0.14em] text-white uppercase">
@@ -214,7 +214,7 @@ export default async function HomePage({
           />
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-2">
             {c.valueProps.map((prop) => (
-              <div key={prop.title} className="bg-black p-8">
+              <div key={prop.title} className="bg-ground p-8">
                 <h3 className="text-lg font-semibold text-white">{prop.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-white/55">{prop.body}</p>
               </div>
@@ -244,7 +244,7 @@ export default async function HomePage({
           />
           <ol className="mt-14 grid gap-px bg-white/10 lg:grid-cols-5">
             {c.processSteps.map((step) => (
-              <li key={step.step} className="bg-black p-7">
+              <li key={step.step} className="bg-ground p-7">
                 <span className="text-xs font-semibold tracking-[0.2em] text-solar">
                   {step.step}
                 </span>
@@ -275,7 +275,7 @@ export default async function HomePage({
               <Link
                 key={project.slug}
                 href={L(`/projekte/${project.slug}`)}
-                className="group bg-black p-8 transition-colors hover:bg-surface"
+                className="group bg-ground p-8 transition-colors hover:bg-surface"
               >
                 <p className="text-xs tracking-[0.14em] text-solar uppercase">{project.sector}</p>
                 <h3 className="mt-4 text-lg font-semibold text-white">{project.title}</h3>
@@ -315,7 +315,7 @@ export default async function HomePage({
               <Link
                 key={article.slug}
                 href={L(`/wissensdatenbank/${article.slug}`)}
-                className="group flex flex-col bg-black p-8 transition-colors hover:bg-surface"
+                className="group flex flex-col bg-ground p-8 transition-colors hover:bg-surface"
               >
                 <div className="flex items-center gap-3 text-xs tracking-[0.12em] uppercase">
                   <span className="text-solar">{article.category}</span>

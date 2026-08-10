@@ -4,14 +4,14 @@
   /* Single-theme by intent: the brand mark is drawn for a black ground.
      Every colour is painted explicitly so the page holds on any host. */
   :root {
-    --ink: #000000;
-    --surface: #0a0b0d;
-    --surface-2: #111316;
+    --ink: #0a1017;
+    --surface: #111a24;
+    --surface-2: #172433;
     --line: rgba(255, 255, 255, 0.11);
-    --line-strong: rgba(255, 255, 255, 0.2);
-    --text: #f2f4f6;
-    --muted: rgba(242, 244, 246, 0.56);
-    --faint: rgba(242, 244, 246, 0.34);
+    --line-strong: rgba(120, 170, 210, 0.32);
+    --text: #e8edf2;
+    --muted: rgba(232, 237, 242, 0.58);
+    --faint: rgba(232, 237, 242, 0.36);
     --solar: #f5c518;
     --solar-bright: #ffd12e;
     --solar-dim: rgba(245, 197, 24, 0.14);
@@ -65,7 +65,7 @@
   .previewbar strong { color: var(--solar); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.6875rem; }
 
   /* ---------- Header ---------- */
-  header.site { position: sticky; top: 0; z-index: 50; background: rgba(0,0,0,0.92); backdrop-filter: blur(10px); }
+  header.site { position: sticky; top: 0; z-index: 50; background: rgba(10,16,23,0.93); backdrop-filter: blur(10px); }
 
   /* Utility bar carrying contact details and the language switcher. */
   .utility { background: var(--surface-2); border-bottom: 1px solid var(--line); }
@@ -80,7 +80,7 @@
   .langswitch button {
     background: none; border: 0; cursor: pointer; font: inherit;
     padding: 0.25rem 0.4rem; font-size: 0.7rem; font-weight: 600;
-    letter-spacing: 0.14em; text-transform: uppercase; color: rgba(242,244,246,0.5);
+    letter-spacing: 0.14em; text-transform: uppercase; color: rgba(232,237,242,0.5);
     transition: color 0.15s ease;
   }
   .langswitch button:hover { color: var(--text); }
@@ -127,8 +127,8 @@
     content: ""; position: absolute; inset: 0;
     background:
       radial-gradient(58% 55% at 50% 100%, rgba(245,197,24,0.15), transparent 70%),
-      linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 56px 56px,
-      linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 56px 56px;
+      linear-gradient(to right, rgba(140,190,230,0.05) 1px, transparent 1px) 0 0 / 56px 56px,
+      linear-gradient(to bottom, rgba(140,190,230,0.05) 1px, transparent 1px) 0 0 / 56px 56px;
     pointer-events: none;
   }
   .pagehead .wrap { position: relative; padding-block: clamp(3.5rem, 8vw, 6rem); }
@@ -322,7 +322,7 @@ const SITE = DATA.site;
    SVG line art — same geometry as the React components in the repo.
    -------------------------------------------------------------------------- */
 const SW = 'fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
-const WHITE = "rgba(255,255,255,0.85)";
+const WHITE = "rgba(232,237,242,0.85)";
 const SOLAR = "#f5c518";
 
 function panel(x1, y1, x2, y2, cells, depth) {

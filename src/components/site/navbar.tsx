@@ -28,7 +28,7 @@ export function Navbar({ locale, content }: { locale: Locale; content: SiteConte
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 bg-ground/90 backdrop-blur-md">
       {/* Utility bar: contact details on the left, language switcher on the right. */}
       <div className="border-b border-white/10 bg-surface-2">
         <div className="mx-auto flex h-10 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -97,7 +97,7 @@ export function Navbar({ locale, content }: { locale: Locale; content: SiteConte
       </div>
 
       {open && (
-        <div className="border-b border-white/10 bg-black px-4 py-6 xl:hidden">
+        <div className="border-b border-white/10 bg-ground px-4 py-6 xl:hidden">
           <nav className="flex flex-col gap-1">
             {content.nav.map((item) => (
               <Link

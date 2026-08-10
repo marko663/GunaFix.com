@@ -108,7 +108,7 @@ export default async function ArticlePage({
               <Link
                 key={other.slug}
                 href={localePath(locale, `/wissensdatenbank/${other.slug}`)}
-                className="bg-black p-7 transition-colors hover:bg-surface"
+                className="bg-ground p-7 transition-colors hover:bg-surface"
               >
                 <p className="text-xs tracking-[0.12em] text-solar uppercase">{other.category}</p>
                 <p className="mt-3 font-semibold text-white">{other.title}</p>

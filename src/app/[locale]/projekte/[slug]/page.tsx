@@ -60,7 +60,7 @@ export default async function ProjectDetailPage({
       <section className="border-b border-white/10">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-white/10 px-4 sm:px-6 lg:grid-cols-4 lg:px-8">
           {project.metrics.map((metric) => (
-            <div key={metric.label} className="bg-black px-2 py-10 text-center">
+            <div key={metric.label} className="bg-ground px-2 py-10 text-center">
               <p className="text-2xl font-semibold text-solar sm:text-3xl">{metric.value}</p>
               <p className="mt-2 text-xs tracking-[0.12em] text-white/45 uppercase">
                 {metric.label}

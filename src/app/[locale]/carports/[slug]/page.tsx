@@ -94,7 +94,7 @@ export default async function CarportDetailPage({
           </h2>
           <div className="mt-10 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
             {carport.types.map((type) => (
-              <div key={type.code} className="bg-black p-7">
+              <div key={type.code} className="bg-ground p-7">
                 <p className="text-sm font-semibold tracking-[0.16em] text-solar uppercase">
                   {type.code}
                 </p>
@@ -152,7 +152,7 @@ export default async function CarportDetailPage({
               <Link
                 key={other.slug}
                 href={localePath(locale, `/carports/${other.slug}`)}
-                className="bg-black p-6 transition-colors hover:bg-surface"
+                className="bg-ground p-6 transition-colors hover:bg-surface"
               >
                 <p className="text-sm font-semibold tracking-[0.14em] text-white uppercase">
                   {other.name}

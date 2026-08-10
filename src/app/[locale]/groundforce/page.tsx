@@ -63,7 +63,7 @@ export default async function GroundForcePage({
           />
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-2 lg:grid-cols-3">
             {gf.benefits.map((benefit) => (
-              <div key={benefit.title} className="bg-black p-8">
+              <div key={benefit.title} className="bg-ground p-8">
                 <h3 className="text-lg font-semibold text-white">{benefit.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-white/55">{benefit.body}</p>
               </div>
@@ -77,7 +77,7 @@ export default async function GroundForcePage({
           <SectionHeading eyebrow={ui.eyebrowProcess} title={ui.homeProcessTitle} />
           <ol className="mt-14 grid gap-px bg-white/10 md:grid-cols-2 lg:grid-cols-4">
             {gf.process.map((step) => (
-              <li key={step.step} className="bg-black p-8">
+              <li key={step.step} className="bg-ground p-8">
                 <span className="text-xs font-semibold tracking-[0.2em] text-solar">
                   {step.step}
                 </span>
@@ -127,7 +127,7 @@ export default async function GroundForcePage({
           <SectionHeading eyebrow={ui.eyebrowSpecs} title={gf.title} />
           <dl className="mt-12 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
             {gf.specs.map((spec) => (
-              <div key={spec.label} className="bg-black p-7">
+              <div key={spec.label} className="bg-ground p-7">
                 <dt className="text-xs tracking-[0.12em] text-white/40 uppercase">{spec.label}</dt>
                 <dd className="mt-3 text-sm leading-relaxed text-white/80">{spec.value}</dd>
               </div>

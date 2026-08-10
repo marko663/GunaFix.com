@@ -61,7 +61,7 @@ export default async function CarportsPage({
             {c.carports.map((carport, index) => (
               <article
                 key={carport.slug}
-                className="grid gap-10 bg-black p-8 lg:grid-cols-[1fr_1.2fr] lg:items-start lg:p-12"
+                className="grid gap-10 bg-ground p-8 lg:grid-cols-[1fr_1.2fr] lg:items-start lg:p-12"
               >
                 <div className="order-1 border border-white/10 bg-surface p-6 lg:order-none lg:sticky lg:top-32">
                   <CarportVisual variant={carport.visual} />

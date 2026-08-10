@@ -53,7 +53,7 @@ export default async function ProjectsPage({
       <section className="border-b border-white/10">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-white/10 px-4 sm:px-6 lg:grid-cols-4 lg:px-8">
           {c.stats.map((stat) => (
-            <div key={stat.label} className="bg-black px-2 py-10 text-center">
+            <div key={stat.label} className="bg-ground px-2 py-10 text-center">
               <p className="text-3xl font-semibold text-solar sm:text-4xl">{stat.value}</p>
               <p className="mt-2 text-xs tracking-[0.12em] text-white/45 uppercase">
                 {stat.label}
@@ -74,7 +74,7 @@ export default async function ProjectsPage({
               <Link
                 key={project.slug}
                 href={localePath(locale, `/projekte/${project.slug}`)}
-                className="group flex flex-col bg-black p-8 transition-colors hover:bg-surface lg:p-10"
+                className="group flex flex-col bg-ground p-8 transition-colors hover:bg-surface lg:p-10"
               >
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs tracking-[0.12em] uppercase">
                   <span className="text-solar">{project.sector}</span>

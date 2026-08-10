@@ -72,7 +72,7 @@ export default async function KnowledgePage({
               <Link
                 key={article.slug}
                 href={localePath(locale, `/wissensdatenbank/${article.slug}`)}
-                className="group flex flex-col bg-black p-8 transition-colors hover:bg-surface"
+                className="group flex flex-col bg-ground p-8 transition-colors hover:bg-surface"
               >
                 <div className="flex items-center gap-3 text-xs tracking-[0.12em] uppercase">
                   <span className="text-solar">{article.category}</span>
