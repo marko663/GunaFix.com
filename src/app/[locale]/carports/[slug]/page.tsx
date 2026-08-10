@@ -5,14 +5,17 @@ import { ArrowLeft } from "lucide-react";
 
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
-import { CarportVisual } from "@/components/brand/illustrations";
-import { getContent } from "@/data/content";
+import { MediaFrame } from "@/components/site/media-frame";
+import { getSiteContent } from "@/data/cms";
 import { isLocale, localePath, locales } from "@/data/site";
 
-export function generateStaticParams() {
-  return locales.flatMap((locale) =>
-    getContent(locale).carports.map((carport) => ({ locale, slug: carport.slug }))
+export async function generateStaticParams() {
+  const perLocale = await Promise.all(
+    locales.map(async (locale) =>
+      (await getSiteContent(locale)).carports.map((carport) => ({ locale, slug: carport.slug }))
+    )
   );
+  return perLocale.flat();
 }
 
 export async function generateMetadata({
@@ -23,7 +26,7 @@ export async function generateMetadata({
   const { locale, slug } = await params;
   if (!isLocale(locale)) return {};
 
-  const carport = getContent(locale).carports.find((c) => c.slug === slug);
+  const carport = (await getSiteContent(locale)).carports.find((c) => c.slug === slug);
   if (!carport) return {};
 
   return {
@@ -47,7 +50,7 @@ export default async function CarportDetailPage({
   const { locale, slug } = await params;
   if (!isLocale(locale)) notFound();
 
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
   const { ui } = c;
   const carport = c.carports.find((item) => item.slug === slug);
   if (!carport) notFound();
@@ -61,11 +64,13 @@ export default async function CarportDetailPage({
       <section className="border-b border-white/10 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[1.3fr_1fr]">
-            <div className="border border-white/10 bg-surface p-8">
-              <CarportVisual variant={carport.visual} />
-              <p className="mt-6 text-xs tracking-[0.12em] text-white/35 uppercase">
-                {ui.elevationNote}
-              </p>
+            <div>
+              <MediaFrame image={carport.image} variant={carport.visual} priority />
+              {!carport.image && (
+                <p className="mt-4 text-xs tracking-[0.12em] text-white/35 uppercase">
+                  {ui.elevationNote}
+                </p>
+              )}
             </div>
 
             <div className="border border-white/10">

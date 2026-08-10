@@ -5,13 +5,17 @@ import { ArrowLeft } from "lucide-react";
 
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
-import { getContent } from "@/data/content";
+import { MediaFrame } from "@/components/site/media-frame";
+import { getSiteContent } from "@/data/cms";
 import { isLocale, localePath, locales } from "@/data/site";
 
-export function generateStaticParams() {
-  return locales.flatMap((locale) =>
-    getContent(locale).projects.map((project) => ({ locale, slug: project.slug }))
+export async function generateStaticParams() {
+  const perLocale = await Promise.all(
+    locales.map(async (locale) =>
+      (await getSiteContent(locale)).projects.map((project) => ({ locale, slug: project.slug }))
+    )
   );
+  return perLocale.flat();
 }
 
 export async function generateMetadata({
@@ -22,7 +26,7 @@ export async function generateMetadata({
   const { locale, slug } = await params;
   if (!isLocale(locale)) return {};
 
-  const project = getContent(locale).projects.find((p) => p.slug === slug);
+  const project = (await getSiteContent(locale)).projects.find((p) => p.slug === slug);
   if (!project) return {};
 
   return {
@@ -44,7 +48,7 @@ export default async function ProjectDetailPage({
   const { locale, slug } = await params;
   if (!isLocale(locale)) notFound();
 
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
   const { ui } = c;
   const project = c.projects.find((p) => p.slug === slug);
   if (!project) notFound();
@@ -69,6 +73,14 @@ export default async function ProjectDetailPage({
           ))}
         </div>
       </section>
+
+      {project.image && (
+        <section className="border-b border-white/10 py-16">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <MediaFrame image={project.image} priority sizes="(min-width: 1024px) 64rem, 100vw" />
+          </div>
+        </section>
+      )}
 
       <section className="border-b border-white/10 py-20">
         <div className="mx-auto grid max-w-5xl gap-12 px-4 sm:px-6 md:grid-cols-2 lg:px-8">
@@ -96,6 +108,14 @@ export default async function ProjectDetailPage({
             </Link>
           </div>
         </div>
+
+        {project.gallery && project.gallery.length > 0 && (
+          <div className="mx-auto mt-14 grid max-w-5xl gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:px-8">
+            {project.gallery.map((shot) => (
+              <MediaFrame key={shot.url} image={shot} sizes="(min-width: 640px) 50vw, 100vw" />
+            ))}
+          </div>
+        )}
 
         <div className="mx-auto mt-10 max-w-5xl px-4 sm:px-6 lg:px-8">
           <Link

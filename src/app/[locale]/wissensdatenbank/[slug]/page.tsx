@@ -5,13 +5,17 @@ import { ArrowLeft } from "lucide-react";
 
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
-import { getContent } from "@/data/content";
+import { MediaFrame } from "@/components/site/media-frame";
+import { getSiteContent } from "@/data/cms";
 import { isLocale, localePath, locales } from "@/data/site";
 
-export function generateStaticParams() {
-  return locales.flatMap((locale) =>
-    getContent(locale).articles.map((article) => ({ locale, slug: article.slug }))
+export async function generateStaticParams() {
+  const perLocale = await Promise.all(
+    locales.map(async (locale) =>
+      (await getSiteContent(locale)).articles.map((article) => ({ locale, slug: article.slug }))
+    )
   );
+  return perLocale.flat();
 }
 
 export async function generateMetadata({
@@ -22,7 +26,7 @@ export async function generateMetadata({
   const { locale, slug } = await params;
   if (!isLocale(locale)) return {};
 
-  const article = getContent(locale).articles.find((a) => a.slug === slug);
+  const article = (await getSiteContent(locale)).articles.find((a) => a.slug === slug);
   if (!article) return {};
 
   return {
@@ -50,7 +54,7 @@ export default async function ArticlePage({
   const { locale, slug } = await params;
   if (!isLocale(locale)) notFound();
 
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
   const { ui } = c;
   const article = c.articles.find((a) => a.slug === slug);
   if (!article) notFound();
@@ -67,6 +71,14 @@ export default async function ArticlePage({
 
       <article className="border-b border-white/10 py-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          {article.image && (
+            <MediaFrame
+              image={article.image}
+              priority
+              className="mb-14"
+              sizes="(min-width: 768px) 48rem, 100vw"
+            />
+          )}
           {article.sections.map((section) => (
             <section key={section.heading} className="mb-14 last:mb-0">
               <h2 className="text-2xl font-semibold tracking-tight text-white">

@@ -6,6 +6,9 @@
 
 export type CarportVisual = "single" | "double" | "canopy" | "mega" | "premium";
 
+/** A photograph supplied through the CMS. Absent means fall back to line art. */
+export type SiteImage = { url: string; alt: string };
+
 export type CarportType = {
   code: string;
   name: string;
@@ -21,6 +24,7 @@ export type Carport = {
   metaDescription: string;
   intro: string;
   visual: CarportVisual;
+  image?: SiteImage;
   highlights: string[];
   types: CarportType[];
   specs: { label: string; value: string }[];
@@ -39,6 +43,8 @@ export type Project = {
   summary: string;
   challenge: string;
   solution: string;
+  image?: SiteImage;
+  gallery?: SiteImage[];
 };
 
 export type Article = {
@@ -50,6 +56,7 @@ export type Article = {
   seoTitle: string;
   metaDescription: string;
   sections: { heading: string; paragraphs: string[]; bullets?: string[] }[];
+  image?: SiteImage;
 };
 
 export type NavItem = { label: string; href: string };
@@ -74,6 +81,7 @@ export type SiteContent = {
     highlights: string[];
   };
 
+  heroImage?: SiteImage;
   stats: { value: string; label: string }[];
   certifications: { code: string; detail: string }[];
   valueProps: { title: string; body: string }[];
@@ -86,6 +94,7 @@ export type SiteContent = {
     title: string;
     subtitle: string;
     intro: string;
+    image?: SiteImage;
     benefits: { title: string; body: string }[];
     process: { step: string; title: string; body: string }[];
     comparison: {

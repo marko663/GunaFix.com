@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/site/section-heading";
 import { ContactForm } from "@/components/site/contact-form";
 import { FaqSection } from "@/components/site/faq-section";
-import { getContent } from "@/data/content";
+import { getSiteContent } from "@/data/cms";
 import { isLocale, locales, siteConfig } from "@/data/site";
 
 export function generateStaticParams() {
@@ -18,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
 
   return {
     title: c.contact.title,
@@ -38,7 +38,7 @@ export default async function ContactPage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
   const { ui, contact } = c;
 
   const channels = [

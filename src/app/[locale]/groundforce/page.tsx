@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PageHeader, SectionHeading } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
 import { IconScrewPile } from "@/components/brand/illustrations";
-import { getContent } from "@/data/content";
+import { getSiteContent } from "@/data/cms";
 import { isLocale, locales } from "@/data/site";
 
 export function generateStaticParams() {
@@ -18,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  const { groundForce } = getContent(locale);
+  const { groundForce } = await getSiteContent(locale);
 
   return {
     title: groundForce.title,
@@ -38,7 +38,7 @@ export default async function GroundForcePage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
   const { ui, groundForce: gf } = c;
 
   return (

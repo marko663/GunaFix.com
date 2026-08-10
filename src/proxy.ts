@@ -45,7 +45,8 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except Next internals, the API, the dashboard and static files.
-    "/((?!_next|api|dashboard|.*\\..*).*)",
+    // Everything except Next internals, the API, the editor, the dashboard
+    // and static files. /studio must not be pushed into a locale prefix.
+    "/((?!_next|api|studio|dashboard|.*\\..*).*)",
   ],
 };

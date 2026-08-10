@@ -12,7 +12,7 @@ import {
   IconScrewPile,
   IconStorageLeaf,
 } from "@/components/brand/illustrations";
-import { getContent } from "@/data/content";
+import { getSiteContent } from "@/data/cms";
 import { isLocale, localePath } from "@/data/site";
 
 export default async function HomePage({
@@ -23,7 +23,7 @@ export default async function HomePage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
   const { ui } = c;
   const L = (path: string) => localePath(locale, path);
 

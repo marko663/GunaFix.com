@@ -5,8 +5,8 @@ import { ArrowRight } from "lucide-react";
 
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
-import { CarportVisual } from "@/components/brand/illustrations";
-import { getContent } from "@/data/content";
+import { MediaFrame } from "@/components/site/media-frame";
+import { getSiteContent } from "@/data/cms";
 import { isLocale, localePath, locales } from "@/data/site";
 
 export function generateStaticParams() {
@@ -20,7 +20,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
 
   return {
     title: c.carportsIntro.title,
@@ -40,7 +40,7 @@ export default async function CarportsPage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
   const { ui } = c;
 
   return (
@@ -63,9 +63,11 @@ export default async function CarportsPage({
                 key={carport.slug}
                 className="grid gap-10 bg-ground p-8 lg:grid-cols-[1fr_1.2fr] lg:items-start lg:p-12"
               >
-                <div className="order-1 border border-white/10 bg-surface p-6 lg:order-none lg:sticky lg:top-32">
-                  <CarportVisual variant={carport.visual} />
-                </div>
+                <MediaFrame
+                  image={carport.image}
+                  variant={carport.visual}
+                  className="order-1 lg:order-none lg:sticky lg:top-32"
+                />
 
                 <div>
                   <p className="text-xs font-semibold tracking-[0.2em] text-solar">

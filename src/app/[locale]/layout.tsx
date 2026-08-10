@@ -5,7 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
-import { getContent } from "@/data/content";
+import { getSiteContent } from "@/data/cms";
 import {
   htmlLang,
   isLocale,
@@ -37,7 +37,7 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isLocale(locale)) return {};
 
-  const content = getContent(locale);
+  const content = await getSiteContent(locale);
   const title = `${siteConfig.name} | ${content.meta.claim}`;
 
   return {
@@ -77,7 +77,7 @@ export default async function LocaleLayout({
   if (!isLocale(locale)) notFound();
 
   const typedLocale: Locale = locale;
-  const content = getContent(typedLocale);
+  const content = await getSiteContent(typedLocale);
 
   return (
     <html

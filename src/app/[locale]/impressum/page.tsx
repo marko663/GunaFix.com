@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/site/section-heading";
-import { getContent } from "@/data/content";
+import { getSiteContent } from "@/data/cms";
 import { isLocale, locales, siteConfig } from "@/data/site";
 
 export function generateStaticParams() {
@@ -18,7 +18,7 @@ export async function generateMetadata({
   if (!isLocale(locale)) return {};
 
   return {
-    title: getContent(locale).legal.impressum.title,
+    title: (await getSiteContent(locale)).legal.impressum.title,
     robots: { index: false },
   };
 }
@@ -31,7 +31,7 @@ export default async function ImpressumPage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
   const t = c.legal.impressum;
 
   return (

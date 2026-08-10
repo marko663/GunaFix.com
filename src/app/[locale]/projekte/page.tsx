@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 
 import { PageHeader } from "@/components/site/section-heading";
 import { CtaSection } from "@/components/site/cta-section";
-import { getContent } from "@/data/content";
+import { getSiteContent } from "@/data/cms";
 import { isLocale, localePath, locales } from "@/data/site";
 
 export function generateStaticParams() {
@@ -19,7 +19,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
 
   return {
     title: c.projectsIntro.title,
@@ -39,7 +39,7 @@ export default async function ProjectsPage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const c = getContent(locale);
+  const c = await getSiteContent(locale);
   const { ui } = c;
 
   return (
