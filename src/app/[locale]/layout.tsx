@@ -10,6 +10,7 @@ import {
   htmlLang,
   isLocale,
   locales,
+  noIndex,
   ogLocale,
   siteConfig,
   type Locale,
@@ -45,6 +46,7 @@ export async function generateMetadata({
     title: { default: title, template: `%s | ${siteConfig.name}` },
     description: content.meta.description,
     icons: { icon: "/logo.svg" },
+    ...(noIndex ? { robots: { index: false, follow: false } } : {}),
     alternates: {
       canonical: `/${locale}`,
       languages: Object.fromEntries(locales.map((code) => [code, `/${code}`])),

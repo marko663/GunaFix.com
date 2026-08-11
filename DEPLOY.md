@@ -26,6 +26,7 @@ Formularversand über Resend ist bis 3.000 E-Mails/Monat kostenlos.
    | `RESEND_API_KEY` | Schlüssel von resend.com (für das Kontaktformular) |
    | `CONTACT_EMAIL` | Postfach, das die Anfragen empfangen soll |
    | `CONTACT_FROM_EMAIL` | z. B. `Solaris Industrial <kontakt@kundendomain.de>` |
+   | `SITE_NOINDEX` | `true` **für die Demo**, später entfernen |
 
    Ohne `RESEND_API_KEY` nimmt das Formular Eingaben weiterhin an und
    protokolliert sie, versendet aber keine E-Mail.
@@ -34,6 +35,22 @@ Formularversand über Resend ist bis 3.000 E-Mails/Monat kostenlos.
 5. Domain verbinden: **Domain management → Add a domain**, danach die von
    Netlify angezeigten Nameserver beim Domain-Anbieter eintragen. Das
    SSL-Zertifikat wird automatisch ausgestellt.
+
+## Demo-Version für den Kunden
+
+Solange die Seite noch Platzhalter enthält, darf sie nicht in Suchmaschinen
+auftauchen. Dafür beim Hoster setzen:
+
+```
+SITE_NOINDEX=true
+```
+
+Dann liefert `robots.txt` ein vollständiges `Disallow: /` und jede Seite trägt
+`<meta name="robots" content="noindex, nofollow">`. Die Website funktioniert
+normal — sie wird nur nicht indexiert.
+
+**Vor dem echten Livegang die Variable wieder entfernen** und neu
+veröffentlichen, sonst bleibt die Seite für Google unsichtbar.
 
 ## Nach dem Livegang prüfen
 
@@ -45,6 +62,7 @@ Formularversand über Resend ist bis 3.000 E-Mails/Monat kostenlos.
 - [ ] Kontaktformular abschicken und Zustellung prüfen
 - [ ] `/sitemap.xml` liefert beide Sprachen
 - [ ] Impressum und Datenschutz mit den echten Firmendaten gefüllt
+- [ ] `SITE_NOINDEX` entfernt und `robots.txt` erlaubt wieder das Indexieren
 
 ## Vor dem Livegang unbedingt ersetzen
 

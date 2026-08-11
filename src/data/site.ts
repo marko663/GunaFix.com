@@ -12,6 +12,13 @@ export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = "de";
 
+/**
+ * Set SITE_NOINDEX=true on demo and staging deployments. It blocks every
+ * crawler and stamps `noindex` on every page, so a preview carrying
+ * placeholder claims can never reach a search result.
+ */
+export const noIndex = process.env.SITE_NOINDEX === "true";
+
 export const localeNames: Record<Locale, { short: string; long: string }> = {
   de: { short: "DE", long: "Deutsch" },
   en: { short: "EN", long: "English" },
