@@ -1,0 +1,320 @@
+<title>Netlify Deploy — Schritt für Schritt</title>
+
+<style>
+  :root {
+    --paper: #fbfaf8;
+    --ink: #16191c;
+    --dim: #58616a;
+    --faint: #8b949c;
+    --rule: #e2e5e8;
+    --card: #ffffff;
+    --accent: #0a6b52;
+    --accent-soft: #e6f2ee;
+    --warn: #8a5a00;
+    --warn-soft: #fdf3e0;
+    --code-bg: #12161a;
+    --code-fg: #e8edf2;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14171a; --ink: #eef1f4; --dim: #a3acb4; --faint: #7b848c;
+      --rule: #2a3037; --card: #1b1f24; --accent: #5fd3ae; --accent-soft: #17302a;
+      --warn: #e0b055; --warn-soft: #2e2415;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14171a; --ink: #eef1f4; --dim: #a3acb4; --faint: #7b848c;
+    --rule: #2a3037; --card: #1b1f24; --accent: #5fd3ae; --accent-soft: #17302a;
+    --warn: #e0b055; --warn-soft: #2e2415;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 17px; line-height: 1.65;
+    -webkit-text-size-adjust: 100%; overflow-x: hidden;
+  }
+  .wrap { max-width: 720px; margin-inline: auto; padding: 1.5rem 1.1rem 5rem; }
+
+  h1, h2, h3 { margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  p { margin: 0; }
+
+  header.top { border-bottom: 2px solid var(--ink); padding-bottom: 1rem; }
+  header.top p.kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  header.top h1 { font-size: clamp(1.6rem, 6vw, 2.2rem); margin-top: 0.5rem; }
+  header.top p.sub { color: var(--dim); margin-top: 0.7rem; font-size: 0.95rem; }
+
+  .step { margin-top: 2rem; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+  .step > .head { display: flex; gap: 0.9rem; align-items: center; padding: 0.9rem 1rem; border-bottom: 1px solid var(--rule); }
+  .step .num {
+    flex: none; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: var(--paper); display: grid; place-items: center;
+    font-weight: 700; font-size: 0.9rem; font-variant-numeric: tabular-nums;
+  }
+  .step .head h2 { font-size: 1.05rem; }
+  .step .head .time { margin-left: auto; font-size: 0.72rem; color: var(--faint); white-space: nowrap; }
+  .step > .body { padding: 1rem; display: grid; gap: 0.85rem; }
+  .step p { font-size: 0.95rem; }
+  .step .muted { color: var(--dim); font-size: 0.88rem; }
+
+  ol.tap, ul.tap { margin: 0; padding-left: 1.15rem; display: grid; gap: 0.5rem; font-size: 0.95rem; }
+  ol.tap li::marker { color: var(--accent); font-weight: 700; }
+
+  kbd {
+    font: inherit; font-size: 0.88em; font-weight: 600;
+    background: var(--accent-soft); color: var(--ink);
+    border: 1px solid var(--rule); border-radius: 5px; padding: 0.1em 0.45em;
+    white-space: nowrap;
+  }
+
+  .copy { position: relative; }
+  .copy pre {
+    margin: 0; background: var(--code-bg); color: var(--code-fg);
+    padding: 0.85rem 0.95rem; border-radius: 8px; overflow-x: auto;
+    font-family: var(--mono); font-size: 0.85rem; line-height: 1.6;
+  }
+  .copy .label { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin-bottom: 0.35rem; }
+
+  .note, .warn {
+    border-radius: 8px; padding: 0.8rem 0.95rem; font-size: 0.88rem; line-height: 1.6;
+  }
+  .note { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+  .warn { background: var(--warn-soft); border-left: 3px solid var(--warn); }
+  .note b, .warn b { display: block; margin-bottom: 0.2rem; }
+
+  .screen {
+    border: 1px dashed var(--rule); border-radius: 8px; padding: 0.8rem 0.9rem;
+    font-family: var(--mono); font-size: 0.78rem; line-height: 1.9; color: var(--dim);
+    background: var(--paper); overflow-x: auto;
+  }
+  .screen .hit { color: var(--accent); font-weight: 700; }
+  .screen .bad { color: #c0392b; font-weight: 700; text-decoration: line-through; }
+  @media (prefers-color-scheme: dark) { .screen .bad { color: #ff8a75; } }
+
+  .check { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.93rem; }
+  .check::before {
+    content: ""; flex: none; width: 17px; height: 17px; margin-top: 0.25em;
+    border: 2px solid var(--accent); border-radius: 4px;
+  }
+
+  details.tr { border-top: 1px solid var(--rule); }
+  details.tr summary { cursor: pointer; padding: 0.75rem 0; font-weight: 600; font-size: 0.93rem; list-style: none; }
+  details.tr summary::-webkit-details-marker { display: none; }
+  details.tr summary::before { content: "▸ "; color: var(--accent); }
+  details.tr[open] summary::before { content: "▾ "; }
+  details.tr .ans { padding: 0 0 0.9rem; color: var(--dim); font-size: 0.9rem; line-height: 1.7; }
+
+  .done { margin-top: 2.5rem; background: var(--accent-soft); border-radius: 10px; padding: 1.2rem; }
+  .done h2 { font-size: 1.1rem; }
+  .done .grid { display: grid; gap: 0.55rem; margin-top: 0.9rem; }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="kicker">Solaris Industrial</p>
+  <h1>Website online stellen</h1>
+  <p class="sub">
+    Netlify, kostenlos, ca. 15 Minuten. Funktioniert auf dem iPad — am Laptop ist
+    es etwas bequemer. Diese Seite offen lassen und daneben arbeiten.
+  </p>
+</header>
+
+<!-- 1 -->
+<section class="step">
+  <div class="head"><span class="num">1</span><h2>Standard-Branch auf GitHub setzen</h2><span class="time">1 Min.</span></div>
+  <div class="body">
+    <p>Damit Netlify automatisch den richtigen Code nimmt.</p>
+    <ol class="tap">
+      <li><kbd>github.com/marko663/GunaFix.com</kbd> öffnen und anmelden</li>
+      <li>Oben rechts auf <kbd>Settings</kbd> (Zahnrad)</li>
+      <li>Links im Menü auf <kbd>Branches</kbd></li>
+      <li>Bei <b>Default branch</b> auf das Symbol mit den zwei Pfeilen ⇄ tippen</li>
+      <li><kbd>main</kbd> auswählen → <kbd>Update</kbd> → <kbd>I understand, update</kbd></li>
+    </ol>
+    <div class="note">
+      <b>Warum das wichtig ist</b>
+      Ohne diesen Schritt schlägt Netlify den alten Branch vor — das ist die alte
+      Website, nicht die neue. Nichts geht verloren, alle Branches bleiben bestehen.
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="step">
+  <div class="head"><span class="num">2</span><h2>Bei Netlify anmelden</h2><span class="time">2 Min.</span></div>
+  <div class="body">
+    <ol class="tap">
+      <li><kbd>app.netlify.com</kbd> öffnen</li>
+      <li><kbd>Sign up</kbd> → <kbd>GitHub</kbd></li>
+      <li>GitHub fragt nach Erlaubnis → <kbd>Authorize Netlify</kbd></li>
+    </ol>
+    <p class="muted">Kein Zahlungsmittel nötig. Der kostenlose Tarif erlaubt auch geschäftliche Nutzung.</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="step">
+  <div class="head"><span class="num">3</span><h2>Projekt importieren</h2><span class="time">3 Min.</span></div>
+  <div class="body">
+    <ol class="tap">
+      <li><kbd>Add new site</kbd> → <kbd>Import an existing project</kbd></li>
+      <li><kbd>Deploy with GitHub</kbd></li>
+      <li>Falls gefragt: <kbd>Configure Netlify on GitHub</kbd> → Konto wählen →
+        <b>Only select repositories</b> → <kbd>GunaFix.com</kbd> anhaken → <kbd>Save</kbd></li>
+      <li>Zurück bei Netlify: in der Liste <kbd>marko663/GunaFix.com</kbd> antippen</li>
+    </ol>
+    <div class="warn">
+      <b>Häufigster Fehler</b>
+      Wird das Repository nicht angezeigt, wurde bei Schritt 3 kein Zugriff erteilt.
+      Erneut auf <b>Configure Netlify on GitHub</b> und das Repository anhaken.
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="step">
+  <div class="head"><span class="num">4</span><h2>Einstellungen prüfen</h2><span class="time">2 Min.</span></div>
+  <div class="body">
+    <p>Der nächste Bildschirm zeigt die Build-Einstellungen. So muss es aussehen:</p>
+    <div class="screen">
+Branch to deploy .......... <span class="hit">main</span><br>
+Base directory ............ <i>(leer)</i><br>
+Build command ............. <span class="hit">npm run build</span><br>
+Publish directory ......... <span class="hit">.next</span>
+    </div>
+    <p class="muted">
+      Diese Werte kommen automatisch aus der Datei <span style="font-family:var(--mono)">netlify.toml</span>
+      im Projekt. Nichts ändern.
+    </p>
+    <p>Steht bei <b>Branch to deploy</b> etwas anderes, jetzt auf <kbd>main</kbd> umstellen:</p>
+    <div class="screen">
+<span class="bad">claude/gunafix-website-redesign-954ii5</span> ← falsch, alte Seite<br>
+<span class="hit">main</span> ← richtig
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="step">
+  <div class="head"><span class="num">5</span><h2>Eine Variable setzen — nicht überspringen</h2><span class="time">2 Min.</span></div>
+  <div class="body">
+    <ol class="tap">
+      <li>Auf derselben Seite: <kbd>Add environment variables</kbd> bzw. <kbd>Show advanced</kbd></li>
+      <li><kbd>New variable</kbd></li>
+      <li>Key und Value eintragen:</li>
+    </ol>
+    <div class="copy">
+      <p class="label">Key</p>
+      <pre>SITE_NOINDEX</pre>
+    </div>
+    <div class="copy">
+      <p class="label">Value</p>
+      <pre>true</pre>
+    </div>
+    <div class="warn">
+      <b>Warum zwingend</b>
+      Die Seite enthält noch Platzhalter — erfundene Zahlen und Projekte. Diese
+      Variable sperrt Google komplett aus. Ohne sie könnten falsche Angaben über
+      ein echtes Unternehmen in der Suche landen. Am Tag des echten Livegangs wird
+      sie wieder entfernt.
+    </div>
+    <p class="muted">
+      Die Variablen für Sanity und den E-Mail-Versand kommen später dazu. Die
+      Website läuft auch ohne sie.
+    </p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="step">
+  <div class="head"><span class="num">6</span><h2>Veröffentlichen</h2><span class="time">4 Min.</span></div>
+  <div class="body">
+    <ol class="tap">
+      <li><kbd>Deploy site</kbd> antippen</li>
+      <li>Warten. Der Bildschirm zeigt <b>Building…</b>, dann <b>Published</b></li>
+      <li>Oben erscheint eine Adresse wie
+        <span style="font-family:var(--mono);font-size:0.85rem">random-name-1a2b3c.netlify.app</span></li>
+    </ol>
+    <p>Adresse verschönern:</p>
+    <ol class="tap">
+      <li><kbd>Site configuration</kbd> → <kbd>Change site name</kbd></li>
+      <li>Eintragen: <span style="font-family:var(--mono)">solaris-industrial-demo</span></li>
+      <li>→ <span style="font-family:var(--mono);font-size:0.85rem">solaris-industrial-demo.netlify.app</span></li>
+    </ol>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="step">
+  <div class="head"><span class="num">7</span><h2>Prüfen, bevor der Kunde es sieht</h2><span class="time">3 Min.</span></div>
+  <div class="body">
+    <p>Die neue Adresse öffnen und der Reihe nach abhaken:</p>
+    <div style="display:grid;gap:0.6rem">
+      <p class="check">Die Startseite erscheint auf Deutsch</p>
+      <p class="check">Oben rechts <b>EN</b> antippen → alles wird englisch, gleiche Seite</p>
+      <p class="check">Menü durchklicken: Carports, GroundForce, Projekte, Wissensdatenbank, Kontakt</p>
+      <p class="check">Ein Carport-Modell öffnen — die Adresse endet auf <span style="font-family:var(--mono);font-size:0.85rem">/de/carports/mega</span></p>
+      <p class="check">Am Ende der Adresse <span style="font-family:var(--mono);font-size:0.85rem">/robots.txt</span> anhängen → dort muss <b>Disallow: /</b> stehen</p>
+      <p class="check">Am Ende der Adresse <span style="font-family:var(--mono);font-size:0.85rem">/studio</span> anhängen → Hinweisseite „Noch nicht verbunden"</p>
+    </div>
+    <div class="note">
+      <b>Alles grün?</b>
+      Dann kann die Adresse an den Kunden gehen. Der Punkt <b>Disallow: /</b> ist der
+      wichtigste — er beweist, dass Google die Demo nicht indexiert.
+    </div>
+  </div>
+</section>
+
+<!-- troubleshooting -->
+<section class="step">
+  <div class="head"><span class="num">?</span><h2>Wenn etwas nicht klappt</h2></div>
+  <div class="body" style="gap:0">
+    <details class="tr" style="border-top:0">
+      <summary>Das Repository erscheint nicht in der Liste</summary>
+      <p class="ans">Netlify hat keinen Zugriff. Auf <b>Configure Netlify on GitHub</b> tippen,
+      das Konto wählen, <b>Only select repositories</b> → <b>GunaFix.com</b> anhaken → speichern.</p>
+    </details>
+    <details class="tr">
+      <summary>„Build failed" — der Aufbau bricht ab</summary>
+      <p class="ans">Auf <b>Deploys</b> → den fehlgeschlagenen Eintrag → das Protokoll öffnen.
+      Die letzten 20 Zeilen kopieren und mir schicken. Ein sauberer Aufbau wurde
+      hier bereits geprüft, deshalb ist fast immer der falsche Branch oder eine
+      fehlende Variable die Ursache.</p>
+    </details>
+    <details class="tr">
+      <summary>Die Seite zeigt 404</summary>
+      <p class="ans">Die Adresse ohne Zusatz aufrufen, also nur
+      <span style="font-family:var(--mono)">…netlify.app</span>. Die Startseite leitet
+      selbstständig auf <span style="font-family:var(--mono)">/de</span> um.</p>
+    </details>
+    <details class="tr">
+      <summary>Der Sprachumschalter fehlt</summary>
+      <p class="ans">Auf dem Handy steht er in der oberen schmalen Leiste ganz rechts,
+      neben Telefonnummer und E-Mail.</p>
+    </details>
+    <details class="tr">
+      <summary>Bei robots.txt steht nicht „Disallow: /"</summary>
+      <p class="ans">Die Variable aus Schritt 5 fehlt oder ist falsch geschrieben.
+      Unter <b>Site configuration → Environment variables</b> prüfen: exakt
+      <span style="font-family:var(--mono)">SITE_NOINDEX</span> mit dem Wert
+      <span style="font-family:var(--mono)">true</span>. Danach unter <b>Deploys</b>
+      → <b>Trigger deploy</b> → <b>Clear cache and deploy site</b>.</p>
+    </details>
+  </div>
+</section>
+
+<div class="done">
+  <h2>Danach — die nächsten Schritte</h2>
+  <div class="grid">
+    <p class="check">Sanity-Projekt anlegen und verbinden (siehe CMS-SETUP.md)</p>
+    <p class="check">Klären, wessen Firma das ist — erfundene Angaben entfernen</p>
+    <p class="check">Echte Texte, Fotos und Firmendaten einpflegen</p>
+    <p class="check">Eigene Domain verbinden</p>
+    <p class="check">Variable <span style="font-family:var(--mono)">SITE_NOINDEX</span> entfernen</p>
+  </div>
+</div>
+
+</div>
