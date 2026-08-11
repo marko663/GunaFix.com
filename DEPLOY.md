@@ -1,5 +1,10 @@
 # Livegang
 
+> **Stand:** Eine Demo-Version läuft bereits bei Netlify mit `SITE_NOINDEX=true`.
+> Geprüft: Startseite, `/robots.txt` (`Disallow: /`), `/de/carports/mega`
+> und `/studio` liefern das erwartete Ergebnis.
+> Offen: Sanity verbinden, echte Inhalte, eigene Domain, `SITE_NOINDEX` entfernen.
+
 ## Wohin
 
 | Anbieter | Kosten | Hinweis |
