@@ -1,0 +1,25 @@
+# Netlify deployment.
+#
+# The Next.js runtime plugin is installed automatically by Netlify and handles
+# the App Router, the locale proxy and image optimisation. Nothing else is
+# needed beyond setting the environment variables listed in DEPLOY.md.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# The editor is private working software, never a search result.
+[[headers]]
+  for = "/studio/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
