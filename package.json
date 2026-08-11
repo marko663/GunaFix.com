@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:cms": "node scripts/test-cms-merge.mjs",
+    "preview": "node scripts/build-preview.mjs",
+    "seed": "node scripts/sanity-seed.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
