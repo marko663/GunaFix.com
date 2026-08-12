@@ -39,10 +39,22 @@ export function isLocale(value: string): value is Locale {
   return (locales as readonly string[]).includes(value);
 }
 
+/**
+ * The site's own address, used for canonical tags, OpenGraph, the sitemap
+ * and robots.txt. Netlify sets `URL` to the primary site address at build
+ * time, so a deployment is self-describing; set NEXT_PUBLIC_SITE_URL once a
+ * custom domain is connected.
+ */
+const siteUrl = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.URL ||
+  "http://localhost:3000"
+).replace(/\/$/, "");
+
 export const siteConfig = {
   name: "Solaris Industrial",
   shortName: "Solaris",
-  url: "https://gunafix.com",
+  url: siteUrl,
   tagline: "Smart Renewable Energy Solutions",
   email: "office@solaris-industrial.eu",
   phone: "+49 30 5683 4120",
