@@ -1079,6 +1079,7 @@ export const en: SiteContent = {
     footerModels: "Ranges",
     footerContact: "Contact",
     rightsReserved: "All rights reserved.",
+    builtBy: "Built by",
 
     openMenu: "Open menu",
     closeMenu: "Close menu",

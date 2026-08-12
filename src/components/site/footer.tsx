@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
-import { siteConfig, localePath, type Locale } from "@/data/site";
+import { agency, siteConfig, localePath, type Locale } from "@/data/site";
 import type { SiteContent } from "@/data/types";
 
 export function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
@@ -87,7 +87,7 @@ export function Footer({ locale, content }: { locale: Locale; content: SiteConte
           <p className="text-xs text-white/35">
             © {year} {siteConfig.name}. {content.ui.rightsReserved}
           </p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             {content.legalNav.map((item) => (
               <Link
                 key={item.href}
@@ -97,6 +97,17 @@ export function Footer({ locale, content }: { locale: Locale; content: SiteConte
                 {item.label}
               </Link>
             ))}
+            {agency.show && (
+              <a
+                href={agency.url}
+                target="_blank"
+                rel="noopener"
+                className="text-xs text-white/35 transition-colors hover:text-solar"
+              >
+                {content.ui.builtBy}{" "}
+                <span className="font-medium text-white/55">{agency.name}</span>
+              </a>
+            )}
           </div>
         </div>
       </div>

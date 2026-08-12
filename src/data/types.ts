@@ -234,6 +234,7 @@ export type SiteContent = {
     footerModels: string;
     footerContact: string;
     rightsReserved: string;
+    builtBy: string;
 
     openMenu: string;
     closeMenu: string;

@@ -1063,6 +1063,7 @@ export const de: SiteContent = {
     footerModels: "Baureihen",
     footerContact: "Kontakt",
     rightsReserved: "Alle Rechte vorbehalten.",
+    builtBy: "Umsetzung:",
 
     openMenu: "Menü öffnen",
     closeMenu: "Menü schließen",

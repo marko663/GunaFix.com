@@ -51,6 +51,17 @@ const siteUrl = (
   "http://localhost:3000"
 ).replace(/\/$/, "");
 
+/**
+ * Agency credit in the footer. Set NEXT_PUBLIC_HIDE_CREDIT=true to remove it —
+ * white-labelling is normally a paid option, so it is a switch rather than a
+ * code change.
+ */
+export const agency = {
+  name: "GunaFix",
+  url: "https://gunafix.com",
+  show: process.env.NEXT_PUBLIC_HIDE_CREDIT !== "true",
+};
+
 export const siteConfig = {
   name: "Solaris Industrial",
   shortName: "Solaris",
