@@ -12,7 +12,7 @@
   var DATA;
   try {
     DATA = JSON.parse(node.textContent);
-  } catch (e) {
+  } catch {
     return; // Static markup remains on screen.
   }
 
@@ -119,7 +119,7 @@
   function setLocale(next) {
     if (next === locale) return;
     locale = next;
-    try { localStorage.setItem("solaris-locale", next); } catch (e) { /* preview only */ }
+    try { localStorage.setItem("solaris-locale", next); } catch { /* preview only */ }
     render();
   }
 
@@ -133,7 +133,7 @@
   try {
     var saved = localStorage.getItem("solaris-locale");
     if (saved && DATA[saved]) locale = saved;
-  } catch (e) { /* preview only */ }
+  } catch { /* preview only */ }
 
   window.addEventListener("hashchange", route);
 
