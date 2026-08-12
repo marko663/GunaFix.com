@@ -1,0 +1,338 @@
+<title>Redaktionszugang einrichten — Schritt für Schritt</title>
+
+<style>
+  :root {
+    --paper: #fbfaf8; --ink: #16191c; --dim: #58616a; --faint: #8b949c;
+    --rule: #e2e5e8; --card: #ffffff;
+    --accent: #7a3ea8; --accent-soft: #f2eaf8;
+    --warn: #8a5a00; --warn-soft: #fdf3e0;
+    --danger: #a3271f; --danger-soft: #fbeae8;
+    --code-bg: #12161a; --code-fg: #e8edf2;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14171a; --ink: #eef1f4; --dim: #a3acb4; --faint: #7b848c;
+      --rule: #2a3037; --card: #1b1f24; --accent: #c99ae8; --accent-soft: #2a1f33;
+      --warn: #e0b055; --warn-soft: #2e2415; --danger: #f0958c; --danger-soft: #331d1b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14171a; --ink: #eef1f4; --dim: #a3acb4; --faint: #7b848c;
+    --rule: #2a3037; --card: #1b1f24; --accent: #c99ae8; --accent-soft: #2a1f33;
+    --warn: #e0b055; --warn-soft: #2e2415; --danger: #f0958c; --danger-soft: #331d1b;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 17px; line-height: 1.65;
+    -webkit-text-size-adjust: 100%; overflow-x: hidden;
+  }
+  .wrap { max-width: 720px; margin-inline: auto; padding: 1.5rem 1.1rem 5rem; }
+
+  h1, h2, h3 { margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  p { margin: 0; }
+
+  header.top { border-bottom: 2px solid var(--ink); padding-bottom: 1rem; }
+  header.top .kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  header.top h1 { font-size: clamp(1.6rem, 6vw, 2.2rem); margin-top: 0.5rem; }
+  header.top .sub { color: var(--dim); margin-top: 0.7rem; font-size: 0.95rem; }
+
+  .step { margin-top: 2rem; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+  .step > .head { display: flex; gap: 0.9rem; align-items: center; padding: 0.9rem 1rem; border-bottom: 1px solid var(--rule); }
+  .step .num {
+    flex: none; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: var(--paper); display: grid; place-items: center;
+    font-weight: 700; font-size: 0.9rem;
+  }
+  .step .head h2 { font-size: 1.05rem; }
+  .step .head .time { margin-left: auto; font-size: 0.72rem; color: var(--faint); white-space: nowrap; }
+  .step > .body { padding: 1rem; display: grid; gap: 0.85rem; }
+  .step p { font-size: 0.95rem; }
+  .muted { color: var(--dim); font-size: 0.88rem; }
+
+  ol.tap { margin: 0; padding-left: 1.15rem; display: grid; gap: 0.5rem; font-size: 0.95rem; }
+  ol.tap li::marker { color: var(--accent); font-weight: 700; }
+
+  kbd {
+    font: inherit; font-size: 0.88em; font-weight: 600;
+    background: var(--accent-soft); color: var(--ink);
+    border: 1px solid var(--rule); border-radius: 5px; padding: 0.1em 0.45em; white-space: nowrap;
+  }
+
+  .copy .label { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin-bottom: 0.35rem; }
+  .copy pre {
+    margin: 0; background: var(--code-bg); color: var(--code-fg);
+    padding: 0.85rem 0.95rem; border-radius: 8px; overflow-x: auto;
+    font-family: var(--mono); font-size: 0.85rem; line-height: 1.6;
+  }
+
+  .note, .warn, .danger { border-radius: 8px; padding: 0.8rem 0.95rem; font-size: 0.88rem; line-height: 1.6; }
+  .note { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+  .warn { background: var(--warn-soft); border-left: 3px solid var(--warn); }
+  .danger { background: var(--danger-soft); border-left: 3px solid var(--danger); }
+  .note b, .warn b, .danger b { display: block; margin-bottom: 0.2rem; }
+
+  .check { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.93rem; }
+  .check::before {
+    content: ""; flex: none; width: 17px; height: 17px; margin-top: 0.25em;
+    border: 2px solid var(--accent); border-radius: 4px;
+  }
+
+  details.tr { border-top: 1px solid var(--rule); }
+  details.tr summary { cursor: pointer; padding: 0.75rem 0; font-weight: 600; font-size: 0.93rem; list-style: none; }
+  details.tr summary::-webkit-details-marker { display: none; }
+  details.tr summary::before { content: "▸ "; color: var(--accent); }
+  details.tr[open] summary::before { content: "▾ "; }
+  details.tr .ans { padding: 0 0 0.9rem; color: var(--dim); font-size: 0.9rem; line-height: 1.7; }
+
+  .done { margin-top: 2.5rem; background: var(--accent-soft); border-radius: 10px; padding: 1.2rem; }
+  .done h2 { font-size: 1.1rem; }
+  .done .grid { display: grid; gap: 0.55rem; margin-top: 0.9rem; }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="kicker">Solaris Industrial</p>
+  <h1>Redaktionszugang einrichten</h1>
+  <p class="sub">
+    Damit der Kunde Texte und Bilder selbst ändern kann. Kostenlos, ca. 20 Minuten,
+    komplett im Browser — auch auf dem iPad. Es wird kein Terminal benötigt.
+  </p>
+</header>
+
+<!-- 1 -->
+<section class="step">
+  <div class="head"><span class="num">1</span><h2>Sanity-Projekt anlegen</h2><span class="time">4 Min.</span></div>
+  <div class="body">
+    <ol class="tap">
+      <li><kbd>sanity.io/manage</kbd> öffnen</li>
+      <li>Anmelden mit <kbd>Google</kbd> oder <kbd>GitHub</kbd></li>
+      <li><kbd>Create new project</kbd></li>
+      <li>Name: <span style="font-family:var(--mono)">Solaris Industrial</span></li>
+      <li>Dataset: <span style="font-family:var(--mono)">production</span>, Sichtbarkeit <b>Public</b></li>
+      <li><kbd>Create project</kbd></li>
+    </ol>
+    <div class="note">
+      <b>Project ID notieren</b>
+      Auf der Projektseite steht oben eine <b>Project ID</b> — acht Zeichen, etwa
+      <span style="font-family:var(--mono)">a1b2c3d4</span>. Diese wird gleich dreimal gebraucht.
+    </div>
+    <p class="muted">
+      „Public" bezieht sich nur auf das Lesen der Texte — die Website muss sie ja
+      anzeigen können. Bearbeiten darf weiterhin nur, wer eingeladen wurde.
+    </p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="step">
+  <div class="head"><span class="num">2</span><h2>Zugriffsschlüssel erzeugen</h2><span class="time">2 Min.</span></div>
+  <div class="body">
+    <ol class="tap">
+      <li>Im Projekt auf <kbd>API</kbd></li>
+      <li>Abschnitt <kbd>Tokens</kbd> → <kbd>Add API token</kbd></li>
+      <li>Name: <span style="font-family:var(--mono)">Seed</span></li>
+      <li>Berechtigung: <kbd>Editor</kbd></li>
+      <li><kbd>Save</kbd></li>
+    </ol>
+    <div class="danger">
+      <b>Der Schlüssel wird nur ein einziges Mal angezeigt</b>
+      Sofort kopieren und sicher ablegen. Er beginnt mit
+      <span style="font-family:var(--mono)">sk…</span> und erlaubt das Ändern aller Inhalte.
+      Niemals in einen Chat, eine E-Mail oder ins Projekt schreiben. Falls verloren:
+      löschen und einen neuen erzeugen.
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="step">
+  <div class="head"><span class="num">3</span><h2>Website freischalten (CORS)</h2><span class="time">2 Min.</span></div>
+  <div class="body">
+    <p>Ohne diesen Schritt bleibt <span style="font-family:var(--mono)">/studio</span> weiß.</p>
+    <ol class="tap">
+      <li>Weiterhin unter <kbd>API</kbd> → Abschnitt <kbd>CORS origins</kbd></li>
+      <li><kbd>Add CORS origin</kbd></li>
+      <li>Die Adresse der Website eintragen, ohne Schrägstrich am Ende</li>
+      <li><b>Allow credentials</b> aktivieren ✅</li>
+      <li><kbd>Save</kbd></li>
+    </ol>
+    <div class="copy">
+      <p class="label">Beispiel</p>
+      <pre>https://IHRE-ADRESSE.netlify.app</pre>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="step">
+  <div class="head"><span class="num">4</span><h2>Zwei Geheimnisse bei GitHub hinterlegen</h2><span class="time">3 Min.</span></div>
+  <div class="body">
+    <ol class="tap">
+      <li><kbd>github.com/marko663/GunaFix.com</kbd> → <kbd>Settings</kbd></li>
+      <li>Links: <kbd>Secrets and variables</kbd> → <kbd>Actions</kbd></li>
+      <li><kbd>New repository secret</kbd> — zweimal, einmal je Eintrag:</li>
+    </ol>
+    <div class="copy">
+      <p class="label">Name 1</p>
+      <pre>SANITY_PROJECT_ID</pre>
+      <p class="label" style="margin-top:0.6rem">Wert 1</p>
+      <pre>die Project ID aus Schritt 1</pre>
+    </div>
+    <div class="copy">
+      <p class="label">Name 2</p>
+      <pre>SANITY_WRITE_TOKEN</pre>
+      <p class="label" style="margin-top:0.6rem">Wert 2</p>
+      <pre>der sk… Schlüssel aus Schritt 2</pre>
+    </div>
+    <p class="muted">
+      GitHub verschlüsselt beide Werte. Sie sind danach nicht mehr lesbar — auch
+      nicht für Sie. Das ist so gewollt.
+    </p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="step">
+  <div class="head"><span class="num">5</span><h2>Inhalte ins CMS laden</h2><span class="time">2 Min.</span></div>
+  <div class="body">
+    <p>Damit der Kunde nicht vor leeren Feldern sitzt, werden die vorhandenen
+      Texte einmalig übertragen — auf den Servern von GitHub, ohne eigenen Rechner.</p>
+    <ol class="tap">
+      <li>Im Repository oben auf <kbd>Actions</kbd></li>
+      <li>Links auf <kbd>Inhalte ins CMS laden</kbd></li>
+      <li>Rechts auf <kbd>Run workflow</kbd> → Branch <kbd>main</kbd> → <kbd>Run workflow</kbd></li>
+      <li>Ca. eine Minute warten, bis ein grüner Haken erscheint</li>
+    </ol>
+    <div class="note">
+      <b>Ergebnis</b>
+      19 Dokumente: Allgemein, GroundForce, 5 Baureihen, 6 Projekte, 6 Fachbeiträge —
+      alle mit deutschem und englischem Text.
+    </div>
+    <p class="muted">
+      Der Ablauf lässt sich beliebig wiederholen. Er ersetzt Texte und rührt
+      hochgeladene Fotos nicht an.
+    </p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="step">
+  <div class="head"><span class="num">6</span><h2>Website mit dem CMS verbinden</h2><span class="time">3 Min.</span></div>
+  <div class="body">
+    <ol class="tap">
+      <li>Bei Netlify: <kbd>Site configuration</kbd> → <kbd>Environment variables</kbd></li>
+      <li><kbd>Add a variable</kbd> — zwei Einträge:</li>
+    </ol>
+    <div class="copy">
+      <p class="label">Variable 1</p>
+      <pre>NEXT_PUBLIC_SANITY_PROJECT_ID = die Project ID</pre>
+    </div>
+    <div class="copy">
+      <p class="label">Variable 2</p>
+      <pre>NEXT_PUBLIC_SANITY_DATASET = production</pre>
+    </div>
+    <ol class="tap" start="3">
+      <li><kbd>Deploys</kbd> → <kbd>Trigger deploy</kbd> → <kbd>Clear cache and deploy site</kbd></li>
+      <li>Zwei bis vier Minuten warten</li>
+    </ol>
+    <div class="warn">
+      <b>Der Schlüssel aus Schritt 2 gehört hier nicht hinein</b>
+      Nur die Project ID und das Dataset. Der <span style="font-family:var(--mono)">sk…</span>
+      Schlüssel bleibt ausschließlich bei GitHub.
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="step">
+  <div class="head"><span class="num">7</span><h2>Prüfen</h2><span class="time">2 Min.</span></div>
+  <div class="body">
+    <div style="display:grid;gap:0.6rem">
+      <p class="check"><span><span style="font-family:var(--mono)">/studio</span> aufrufen — jetzt erscheint eine Anmeldung statt des Hinweistextes</span></p>
+      <p class="check">Anmelden mit demselben Konto wie bei Sanity</p>
+      <p class="check">Links stehen: Allgemein, GroundForce, Carport-Baureihen, Projekte, Fachbeiträge</p>
+      <p class="check">Eine Baureihe öffnen — Felder sind gefüllt, je Feld Deutsch und English</p>
+      <p class="check">Eine Überschrift ändern → <b>Publish</b> → nach ca. einer Minute auf der Website sichtbar</p>
+    </div>
+    <div class="note">
+      <b>Das ist der Moment für den Verkauf</b>
+      Genau diesen letzten Punkt dem Kunden zeigen: Text ändern, veröffentlichen,
+      Website neu laden. Das rechtfertigt den Posten „Redaktionszugang".
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="step">
+  <div class="head"><span class="num">8</span><h2>Kunden einladen</h2><span class="time">2 Min.</span></div>
+  <div class="body">
+    <ol class="tap">
+      <li><kbd>sanity.io/manage</kbd> → Projekt → <kbd>Members</kbd></li>
+      <li><kbd>Invite members</kbd> → E-Mail des Kunden</li>
+      <li>Rolle: <kbd>Editor</kbd> (nicht Administrator)</li>
+      <li><kbd>Send invitation</kbd></li>
+    </ol>
+    <p class="muted">
+      <b>Editor</b> darf Inhalte ändern, aber keine Zugänge verwalten und das Projekt
+      nicht löschen. Die genaue Anzahl freier Plätze steht im Tarifüberblick bei Sanity.
+    </p>
+  </div>
+</section>
+
+<!-- troubleshooting -->
+<section class="step">
+  <div class="head"><span class="num">?</span><h2>Wenn etwas nicht klappt</h2></div>
+  <div class="body" style="gap:0">
+    <details class="tr" style="border-top:0">
+      <summary>/studio bleibt weiß</summary>
+      <p class="ans">CORS fehlt. Schritt 3 wiederholen und prüfen, dass die Adresse
+      exakt stimmt — <b>ohne</b> Schrägstrich am Ende — und <b>Allow credentials</b>
+      aktiviert ist. Danach die Seite neu laden.</p>
+    </details>
+    <details class="tr">
+      <summary>/studio zeigt weiterhin „Noch nicht verbunden"</summary>
+      <p class="ans">Die Variablen aus Schritt 6 fehlen oder der Neuaufbau lief noch
+      nicht. Unter <b>Deploys</b> → <b>Trigger deploy</b> → <b>Clear cache and deploy
+      site</b>. Ein einfacher Neustart genügt nicht, weil die Werte beim Bauen
+      eingebettet werden.</p>
+    </details>
+    <details class="tr">
+      <summary>Der Ablauf bei GitHub schlägt fehl</summary>
+      <p class="ans">Das Protokoll nennt die Ursache. „SANITY_PROJECT_ID fehlt"
+      bedeutet, dass Schritt 4 unvollständig ist. „Unauthorized" bedeutet, dass der
+      Schlüssel nicht die Berechtigung <b>Editor</b> hat — dann in Sanity einen neuen
+      erzeugen und das Geheimnis bei GitHub aktualisieren.</p>
+    </details>
+    <details class="tr">
+      <summary>Im Studio sind alle Felder leer</summary>
+      <p class="ans">Schritt 5 lief nicht oder lief gegen ein anderes Projekt.
+      Prüfen, dass <span style="font-family:var(--mono)">SANITY_PROJECT_ID</span> bei
+      GitHub und <span style="font-family:var(--mono)">NEXT_PUBLIC_SANITY_PROJECT_ID</span>
+      bei Netlify dieselbe ID enthalten.</p>
+    </details>
+    <details class="tr">
+      <summary>Änderungen erscheinen nicht auf der Website</summary>
+      <p class="ans">Im Studio muss <b>Publish</b> gedrückt werden — ein Entwurf allein
+      genügt nicht. Danach bis zu einer Minute warten; die Seiten werden 60 Sekunden
+      zwischengespeichert.</p>
+    </details>
+  </div>
+</section>
+
+<div class="done">
+  <h2>Danach ist offen</h2>
+  <div class="grid">
+    <p class="check">Klären, wessen Firma das ist — erfundene Angaben entfernen</p>
+    <p class="check">Echte Texte, Fotos und Firmendaten einpflegen</p>
+    <p class="check">Impressum und Datenschutz mit echten Daten füllen</p>
+    <p class="check">Eigene Domain verbinden</p>
+    <p class="check"><span style="font-family:var(--mono)">SITE_NOINDEX</span> entfernen und neu veröffentlichen</p>
+  </div>
+</div>
+
+</div>

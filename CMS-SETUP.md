@@ -26,6 +26,10 @@ hinterlegen.
 
 ## 3. Inhalte übertragen
 
+Ohne eigenen Rechner: **Actions → „Inhalte ins CMS laden" → Run workflow**
+(setzt die Repository-Secrets `SANITY_PROJECT_ID` und `SANITY_WRITE_TOKEN`
+voraus). Alternativ lokal:
+
 Damit der Kunde nicht vor einem leeren System sitzt, werden die vorhandenen
 Texte einmalig hochgeladen.
 
@@ -56,7 +60,8 @@ Ohne diesen Schritt bleibt `/studio` leer.
 ## 5. Kunden einladen
 
 Unter **Members → Invite member** die E-Mail des Kunden eintragen, Rolle
-**Editor**. Im kostenlosen Tarif sind bis zu drei Benutzer enthalten.
+**Editor**. Wie viele Plätze der kostenlose Tarif umfasst, steht im aktuellen
+Tarifüberblick bei Sanity.
 
 Der Kunde meldet sich anschließend unter `https://<domain>/studio` an.
 
