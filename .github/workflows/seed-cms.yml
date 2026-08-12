@@ -1,0 +1,65 @@
+name: Inhalte ins CMS laden
+
+# Runs the seed script on GitHub's servers, so the CMS can be filled from a
+# phone or tablet without a local development machine.
+#
+# Requires two repository secrets (Settings -> Secrets and variables -> Actions):
+#   SANITY_PROJECT_ID   the project id from sanity.io/manage
+#   SANITY_WRITE_TOKEN  an Editor token from the same project
+#
+# Then: Actions -> "Inhalte ins CMS laden" -> Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dataset:
+        description: "Dataset (normalerweise production)"
+        required: false
+        default: "production"
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Projekt auschecken
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Zugangsdaten prüfen
+        run: |
+          if [ -z "${{ secrets.SANITY_PROJECT_ID }}" ]; then
+            echo "::error::SANITY_PROJECT_ID fehlt. Unter Settings → Secrets and variables → Actions anlegen."
+            exit 1
+          fi
+          if [ -z "${{ secrets.SANITY_WRITE_TOKEN }}" ]; then
+            echo "::error::SANITY_WRITE_TOKEN fehlt. Unter Settings → Secrets and variables → Actions anlegen."
+            exit 1
+          fi
+          echo "Zugangsdaten vorhanden."
+
+      - name: Inhalte übertragen
+        env:
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: ${{ inputs.dataset }}
+          SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+        run: node scripts/sanity-seed.mjs
+
+      - name: Ergebnis
+        run: |
+          echo "### Inhalte übertragen ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "19 Dokumente wurden ins CMS geschrieben:" >> $GITHUB_STEP_SUMMARY
+          echo "- 1 × Allgemein, 1 × GroundForce" >> $GITHUB_STEP_SUMMARY
+          echo "- 5 × Carport-Baureihen" >> $GITHUB_STEP_SUMMARY
+          echo "- 6 × Projekte" >> $GITHUB_STEP_SUMMARY
+          echo "- 6 × Fachbeiträge" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Jetzt unter \`/studio\` bearbeitbar." >> $GITHUB_STEP_SUMMARY
