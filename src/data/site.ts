@@ -52,14 +52,25 @@ const siteUrl = (
 ).replace(/\/$/, "");
 
 /**
- * Agency credit in the footer. Set NEXT_PUBLIC_HIDE_CREDIT=true to remove it —
- * white-labelling is normally a paid option, so it is a switch rather than a
- * code change.
+ * Agency credit in the footer, wholly controlled by environment variables so
+ * it can be changed on the host without touching the code:
+ *
+ *   NEXT_PUBLIC_AGENCY_NAME   who built it        (default: GunaFix)
+ *   NEXT_PUBLIC_AGENCY_URL    where it links      (empty → plain text)
+ *   NEXT_PUBLIC_HIDE_CREDIT   "true" removes it   (paid white-label option)
+ *
+ * The wording in front of the name is per-language and lives with the rest of
+ * the copy, in `ui.builtBy` of src/data/de.ts and src/data/en.ts.
  */
+const agencyName = (process.env.NEXT_PUBLIC_AGENCY_NAME ?? "GunaFix").trim();
+const agencyUrl = (process.env.NEXT_PUBLIC_AGENCY_URL ?? "https://gunafix.com").trim();
+
 export const agency = {
-  name: "GunaFix",
-  url: "https://gunafix.com",
-  show: process.env.NEXT_PUBLIC_HIDE_CREDIT !== "true",
+  name: agencyName,
+  url: agencyUrl,
+  // An empty name is the same intent as hiding it, and would otherwise leave
+  // a stray label with nothing after it.
+  show: process.env.NEXT_PUBLIC_HIDE_CREDIT !== "true" && agencyName !== "",
 };
 
 export const siteConfig = {

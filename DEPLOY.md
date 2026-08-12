@@ -32,6 +32,9 @@ Formularversand über Resend ist bis 3.000 E-Mails/Monat kostenlos.
    | `CONTACT_EMAIL` | Postfach, das die Anfragen empfangen soll |
    | `CONTACT_FROM_EMAIL` | z. B. `Solaris Industrial <kontakt@kundendomain.de>` |
    | `SITE_NOINDEX` | `true` **für die Demo**, später entfernen |
+   | `NEXT_PUBLIC_AGENCY_NAME` | optional — Name im Fußhinweis (Standard: `GunaFix`) |
+   | `NEXT_PUBLIC_AGENCY_URL` | optional — Ziel des Fußhinweises |
+   | `NEXT_PUBLIC_HIDE_CREDIT` | optional — `true` entfernt den Fußhinweis |
 
    Ohne `RESEND_API_KEY` nimmt das Formular Eingaben weiterhin an und
    protokolliert sie, versendet aber keine E-Mail.
@@ -56,6 +59,25 @@ normal — sie wird nur nicht indexiert.
 
 **Vor dem echten Livegang die Variable wieder entfernen** und neu
 veröffentlichen, sonst bleibt die Seite für Google unsichtbar.
+
+## Hinweis im Fußbereich
+
+Ganz unten steht neben Impressum und Datenschutz dezent, wer die Website
+umgesetzt hat. Steuerbar über drei Variablen beim Hoster — ohne Eingriff in
+den Code:
+
+| Variable | Wirkung |
+|---|---|
+| `NEXT_PUBLIC_AGENCY_NAME` | Name im Hinweis. Standard: `GunaFix` |
+| `NEXT_PUBLIC_AGENCY_URL` | Ziel des Links. Leer lassen → Hinweis ohne Link |
+| `NEXT_PUBLIC_HIDE_CREDIT` | `true` entfernt den Hinweis vollständig |
+
+Nach dem Ändern einmal neu veröffentlichen — die Werte werden beim Bauen
+eingesetzt.
+
+Die Wörter vor dem Namen sind je Sprache hinterlegt und stehen in
+`src/data/de.ts` und `src/data/en.ts` unter `ui.builtBy` (derzeit
+„Umsetzung:" und „Built by").
 
 ## Nach dem Livegang prüfen
 

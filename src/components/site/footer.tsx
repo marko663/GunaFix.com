@@ -97,17 +97,28 @@ export function Footer({ locale, content }: { locale: Locale; content: SiteConte
                 {item.label}
               </Link>
             ))}
-            {agency.show && (
-              <a
-                href={agency.url}
-                target="_blank"
-                rel="noopener"
-                className="text-xs text-white/35 transition-colors hover:text-solar"
-              >
-                {content.ui.builtBy}{" "}
-                <span className="font-medium text-white/55">{agency.name}</span>
-              </a>
-            )}
+            {agency.show &&
+              (() => {
+                const credit = (
+                  <>
+                    {content.ui.builtBy}{" "}
+                    <span className="font-medium text-white/55">{agency.name}</span>
+                  </>
+                );
+                // Without a URL the credit is still shown, just not linked.
+                return agency.url ? (
+                  <a
+                    href={agency.url}
+                    target="_blank"
+                    rel="noopener"
+                    className="text-xs text-white/35 transition-colors hover:text-solar"
+                  >
+                    {credit}
+                  </a>
+                ) : (
+                  <p className="text-xs text-white/35">{credit}</p>
+                );
+              })()}
           </div>
         </div>
       </div>
