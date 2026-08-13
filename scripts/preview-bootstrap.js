@@ -105,7 +105,19 @@
       c.certifications.map(function (x) { return "<span>" + esc(x.code) + "</span>"; }).join("") +
       "</div>" +
       '<p class="colophon">© ' + new Date().getFullYear() + " " + esc(DATA.site.name) +
-      ". " + esc(c.ui.rightsReserved) + "</p>"
+      ". " + esc(c.ui.rightsReserved) + creditMarkup(c) + "</p>"
+    );
+  }
+
+  function creditMarkup(c) {
+    if (!DATA.agency || !DATA.agency.show) return "";
+    var name = esc(DATA.agency.name);
+    return (
+      '<span class="credit">' + esc(c.ui.builtBy) + " " +
+      (DATA.agency.url
+        ? '<a href="' + esc(DATA.agency.url) + '" target="_blank" rel="noopener">' + name + "</a>"
+        : name) +
+      "</span>"
     );
   }
 

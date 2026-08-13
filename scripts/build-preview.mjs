@@ -37,11 +37,11 @@ function loadDictionaries() {
 }
 
 const work = loadDictionaries();
-let de, en, siteConfig;
+let de, en, siteConfig, agency;
 try {
   ({ de } = await import(pathToFileURL(join(work, "de.mjs")).href));
   ({ en } = await import(pathToFileURL(join(work, "en.mjs")).href));
-  ({ siteConfig } = await import(pathToFileURL(join(work, "site.mjs")).href));
+  ({ siteConfig, agency } = await import(pathToFileURL(join(work, "site.mjs")).href));
 } finally {
   rmSync(work, { recursive: true, force: true });
 }
@@ -119,7 +119,15 @@ const footerHtml = (c) => `
       </div>
     </div>
     <div class="certs">${c.certifications.map((x) => `<span>${esc(x.code)}</span>`).join("")}</div>
-    <p class="colophon">© ${new Date().getFullYear()} ${esc(siteConfig.name)}. ${esc(c.ui.rightsReserved)}</p>`;
+    <p class="colophon">© ${new Date().getFullYear()} ${esc(siteConfig.name)}. ${esc(c.ui.rightsReserved)}${
+      agency.show
+        ? `<span class="credit">${esc(c.ui.builtBy)} ${
+            agency.url
+              ? `<a href="${esc(agency.url)}" target="_blank" rel="noopener">${esc(agency.name)}</a>`
+              : esc(agency.name)
+          }</span>`
+        : ""
+    }</p>`;
 
 /* -------------------------------------------------------------------------- */
 /* Assemble                                                                   */
@@ -127,7 +135,7 @@ const footerHtml = (c) => `
 
 const template = readFileSync(join(root, "scripts", "preview-template.html"), "utf8");
 
-const payload = JSON.stringify({ de, en, site: siteConfig })
+const payload = JSON.stringify({ de, en, site: siteConfig, agency })
   // Keep the JSON from terminating the inline <script> block.
   .replace(/</g, "\\u003c");
 
