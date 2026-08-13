@@ -165,4 +165,29 @@ const html = template
 
 writeFileSync(outFile, html);
 
+/*
+ * A second copy as a complete HTML document.
+ *
+ * The file above is a fragment: whatever embeds it supplies <head>, and with
+ * it the character encoding. Opened straight from a download it has none, so
+ * the browser guesses — and guesses Latin-1, which turns every ä ö ü ß and
+ * every em dash into mojibake. This copy declares its own encoding and can
+ * be sent to someone as a file.
+ */
+const standalone = `<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body style="margin:0">
+${html}
+</body>
+</html>
+`;
+const standaloneFile = outFile.replace(/\.html$/, "-standalone.html");
+writeFileSync(standaloneFile, standalone);
+
 console.log(`Preview written to ${outFile} (${(html.length / 1024).toFixed(0)} KB)`);
+console.log(`Standalone copy  ${standaloneFile} (${(standalone.length / 1024).toFixed(0)} KB)`);
