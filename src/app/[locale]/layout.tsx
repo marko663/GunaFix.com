@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 
 import "../globals.css";
 import { Navbar } from "@/components/site/navbar";
@@ -16,14 +16,24 @@ import {
   type Locale,
 } from "@/data/site";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+/*
+ * IBM Plex was drawn for an engineering company, and it shows: the letters
+ * are precise without being anonymous, and the mono cut suits the spec
+ * tables and part labels. latin-ext covers the accented characters in the
+ * European place names alongside German ä ö ü ß.
+ */
+const plexSans = IBM_Plex_Sans({
+  variable: "--font-plex-sans",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500"],
+  display: "swap",
 });
 
 export function generateStaticParams() {
@@ -86,7 +96,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={htmlLang[typedLocale]}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <script

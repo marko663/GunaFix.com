@@ -31,8 +31,10 @@
   --color-steel-bright: var(--steel-bright);
   --color-solar: var(--solar);
   --color-solar-bright: var(--solar-bright);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* The site sets IBM Plex; the dashboard shares this stylesheet and still
+     sets Geist, so each falls back to whichever its own layout provides. */
+  --font-sans: var(--font-plex-sans, var(--font-geist-sans));
+  --font-mono: var(--font-plex-mono, var(--font-geist-mono));
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
@@ -93,6 +95,37 @@ body {
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--solar);
+}
+
+/*
+ * Display sizes need tightening: Plex is drawn for text, so at 3rem and up
+ * the default word and letter spacing reads loose. Headings also get the
+ * lining, fixed-width figures so numbers in a heading line up.
+ */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.021em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+h1 {
+  letter-spacing: -0.028em;
+  line-height: 1.05;
+}
+
+/* Measured columns: German compounds are long, so prose is kept to a
+   comfortable line length rather than running the full width. */
+p {
+  text-wrap: pretty;
+}
+
+/* Specification values and figures share the mono cut, so a column of them
+   lines up on the decimal. */
+dl dd,
+table td,
+.stat-value {
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 ::selection {
