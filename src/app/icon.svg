@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- The Solaris mark on its own dark ground, so it reads in a browser tab
+       against either a light or a dark toolbar. -->
+  <rect width="200" height="200" fill="#0a1017"/>
+  <g fill="none" stroke-width="25" stroke-linejoin="miter" stroke-miterlimit="6">
+    <path d="M176 56 L100 12 L24 56 L24 101 L176 145" stroke="#ffffff"/>
+    <path d="M24 145 L100 189 L176 145" stroke="#f5c518"/>
+  </g>
+</svg>

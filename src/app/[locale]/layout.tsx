@@ -45,7 +45,10 @@ export async function generateMetadata({
     metadataBase: new URL(siteConfig.url),
     title: { default: title, template: `%s | ${siteConfig.name}` },
     description: content.meta.description,
-    icons: { icon: "/logo.svg" },
+    // Icons and the share picture come from src/app/icon.svg and
+    // opengraph-image.tsx, which Next wires up on its own. Naming them here
+    // would override the generated PNG with an SVG, which the messaging apps
+    // silently refuse to render.
     ...(noIndex ? { robots: { index: false, follow: false } } : {}),
     alternates: {
       canonical: `/${locale}`,
@@ -58,7 +61,6 @@ export async function generateMetadata({
       siteName: siteConfig.name,
       locale: ogLocale[locale],
       type: "website",
-      images: ["/logo.svg"],
     },
     twitter: {
       card: "summary_large_image",
